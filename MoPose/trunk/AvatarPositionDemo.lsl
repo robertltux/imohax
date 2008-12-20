@@ -1,4 +1,4 @@
-// $Id: AvLocationHelper.lsl 21 2008-12-18 22:25:57Z imohax $
+// $Id$
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.

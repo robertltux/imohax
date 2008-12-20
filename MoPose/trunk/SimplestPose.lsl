@@ -1,4 +1,4 @@
-// $Id: MoPoseSimplest.lsl 22 2008-12-18 22:26:56Z imohax $
+// $Id$
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.

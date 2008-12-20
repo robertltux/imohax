@@ -1,4 +1,4 @@
-// $Id: MoOffsetFinder.lsl 11 2008-12-15 15:01:20Z imohax $
+// $Id$
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.

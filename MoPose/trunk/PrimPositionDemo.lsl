@@ -1,4 +1,4 @@
-// $Id: LocationHelper.lsl 18 2008-12-16 21:32:34Z imohax $
+// $Id$
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.

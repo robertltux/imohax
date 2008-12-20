@@ -1,4 +1,4 @@
-// $Id: MoPoseRemote.lsl 18 2008-12-16 21:32:34Z imohax $
+// $Id$
 
 //TODO make it reposition based on the animations notecard, but only if needed
 //TODO make it hide the poseball on sit
