@@ -33,140 +33,148 @@
 
 // this just turns on speaking the output to region channel
 // for integration with other tools listening on that channel
-integer channel = 0;
+integer gChannel = 0;
 
 // or locally so others can see besides just owner
-integer whisper = FALSE;
+integer gWhisper = FALSE;
 
 //WARNING: degrees can sometimes introduce visible conversion errors
 // but are obviously easier to enter 'by hand' for this, persistent
 // rotations should probably always be stored as raw rotations (quats)
-integer rot_in_degrees = TRUE;
+integer gRotInDegrees = TRUE;
 
 // experiment with changing this to odd values to prove not important
 // avatar will not move from sit target unless adj_av* is set below
 // NOTE: sit target is never the actual avatar position due to SL bugs
-vector sit_target_vec = <0.0,0.0,0.01>;
-vector sit_target_deg = <0.0,0.0,-25.0>;
-rotation sit_target_rot = ZERO_ROTATION;
+vector   gSitTargetPos = <0.0,0.0,0.01>;
+vector   gSitTargetDeg = <0.0,0.0,-25.0>;
+rotation gSitTargetRot = ZERO_ROTATION;
 
 // use this one to simulate an animation correction adjustment
 // adjusts local av pos and rot (from initial effective sit target)
-vector adj_av_pos = <0.0,0.0,0.0>;
-vector adj_av_deg = <0.0,0.0,180.0>;
-rotation adj_av_rot = ZERO_ROTATION;
+vector   gAdjustPos = <0.0,0.0,0.0>;
+vector   gAdjustDeg = <0.0,0.0,180.0>;
+rotation gAdjustRot = ZERO_ROTATION;
 
-// regional position and rotation of avatar
-vector pos;
-rotation rot;
+key gAvatar = NULL_KEY;
 
-key avatar = NULL_KEY;
-
-say(string message)
+say(string _message)
 {
-    if (whisper) llWhisper(0,message);
-    else llOwnerSay(message);
-    if (channel != 0) llRegionSay(channel,message);
+    if (gWhisper) llWhisper(0,_message);
+    else llOwnerSay(_message);
+    if (gChannel != 0) llRegionSay(gChannel,_message);
 }
 
 default
 {
     state_entry()
     {
-        if (rot_in_degrees)
+        if (gRotInDegrees)
         {
-            sit_target_rot = llEuler2Rot(sit_target_deg*DEG_TO_RAD);
-            adj_av_rot = llEuler2Rot(adj_av_deg*DEG_TO_RAD);
+            gSitTargetRot = llEuler2Rot(gSitTargetDeg*DEG_TO_RAD);
+            gAdjustRot = llEuler2Rot(gAdjustDeg*DEG_TO_RAD);
         }
-        llSitTarget(sit_target_vec, sit_target_rot);
+        llSitTarget(gSitTargetPos, gSitTargetRot);
         say("Ready");
     }
 
     // put this in touch so we can keep touching to add more adjustment
-    touch_start(integer num)
+    touch_start(integer _num)
     {
-        if (avatar == NULL_KEY)
+        if (gAvatar == NULL_KEY)
         {
             say("Please sit first. No avatar found.");
             return;
         }
 
-        // sitting avatar is always the last link.
-        integer av_link = llGetNumberOfPrims();
+
 
         // fetches the absolute region position and rotation of avatar
         // (without errors that would be introduced deriving from sit target)
-        list details = llGetObjectDetails(avatar,[OBJECT_POS,OBJECT_ROT]);
-        pos = llList2Vector(details,0);
-        rot = llList2Rot(details,1);
+        list details = llGetObjectDetails(gAvatar,[OBJECT_POS,OBJECT_ROT]);
+        vector posRegion   = llList2Vector(details,0);
+        rotation rotRegion = llList2Rot(details,1);
 
         // since llGetObjectDetails() returns regional/global values
         // have to get the difference between av and root position and then
         // make sure result is in terms of the root rotation
-        vector local_pos = (pos - llGetRootPosition())/llGetRootRotation();
-        rotation local_rot = (rot / llGetRootRotation())/llGetRootRotation();
+        vector posLocal   = (posRegion-llGetRootPosition())/llGetRootRotation();
+        rotation rotLocal = (rotRegion/llGetRootRotation())/llGetRootRotation();
 
         // now we add adjustment in terms of avatar's local pos and rot
-        vector adj_pos = local_pos + (adj_av_pos * local_rot);
-        rotation adj_rot = local_rot * adj_av_rot;
+        vector posAdjusted   = posLocal + (gAdjustPos * rotLocal);
+        rotation rotAdjusted = rotLocal * gAdjustRot;
 
-        // for quick ref, some of the following is redundant to above
-        say(
-            "\nSit Target Postion:  "
-                + (string) sit_target_vec + "\n" +
+        // root of entire object link set, not just prim
+        vector   posRoot = llGetRootPosition();
+        rotation rotRoot = llGetRootRotation();
+
+            // for quick ref, some of the following is redundant to above
+            say(
+                "\nSit Target Postion:  "
+                    + (string) gSitTargetPos + "\n" +
             "Sit Target Rotation:  "
-                + (string) sit_target_rot + "\n" +
+                + (string) gSitTargetRot + "\n" +
             "Sit Target Rotation (DEG):  "
-                + (string) sit_target_deg + "\n\n" +
+                + (string) gSitTargetDeg + "\n\n" +
 
             "Av Region Position:  "
-                + (string) pos + "\n" +
+                + (string) posRegion + "\n" +
             "Av Region Rotation:  "
-                + (string) rot + "\n" +
+                + (string) rotRegion + "\n" +
             "Av Region Rotation (DEG):  "
-                + (string) (llRot2Euler(rot)*RAD_TO_DEG) + "\n\n" +
+                + (string) (llRot2Euler(rotRegion)*RAD_TO_DEG) + "\n\n" +
 
-            // notice that these are NOT same as expected sit target due to SL bug
+            // notice NOT same as expected sit target due to SL bug
             "Av Local Position:  "
-                + (string) ((pos - llGetRootPosition())/llGetRootRotation()) + "\n" +
+                + (string) ((posRegion-posRoot)/rotRoot) + "\n" +
             "Av Local Rotation:  "
-                + (string) ((rot / llGetRootRotation())/llGetRootRotation()) + "\n" +
+                + (string) ((rotRegion/rotRoot)/rotRoot) + "\n" +
             "Av Local Rotation (DEG):  "
-                + (string) (llRot2Euler(rot / llGetRootRotation())*RAD_TO_DEG) + "\n\n" +
+                + (string) (llRot2Euler(rotRegion/rotRoot)*RAD_TO_DEG) + "\n\n" +
 
             "Av Adjustment to Local Position:  "
-                + (string) adj_av_pos + "\n" +
+                + (string) gAdjustPos + "\n" +
             "Av Adjustment to Local Rotation:  "
-                + (string) adj_av_rot + "\n" +
+                + (string) gAdjustRot + "\n" +
             "Av Adjustment to Local Rotation: (DEG)  "
-                + (string) (llRot2Euler(adj_av_rot)*RAD_TO_DEG) + "\n\n" +
+                + (string) (llRot2Euler(gAdjustRot)*RAD_TO_DEG) + "\n\n" +
 
             "Av Adjusted Local Position:  "
-                + (string) (local_pos + (adj_av_pos * local_rot)) + "\n" +
+                + (string) (posLocal + (gAdjustPos * rotLocal)) + "\n" +
             "Av Adjusted Local Rotation:  "
-                + (string) (local_rot * adj_av_rot) + "\n" +
+                + (string) (rotLocal * gAdjustRot) + "\n" +
             "Av Adjusted Local Rotation (DEG):  "
-                + (string) (llRot2Euler(local_rot * adj_av_rot)*RAD_TO_DEG));
+                + (string) (llRot2Euler(rotLocal * gAdjustRot)*RAD_TO_DEG));
 
 
-        llSetLinkPrimitiveParams(av_link,[PRIM_POSITION,adj_pos,PRIM_ROTATION,adj_rot]);
+        // sitting avatar is always the last link.
+        integer avLink = llGetNumberOfPrims();
+        llSetLinkPrimitiveParams(avLink,[
+            PRIM_POSITION,posAdjusted,
+            PRIM_ROTATION,rotAdjusted]
+                );
 
         // this one demonstrates/proves the conversion from global to local above
         // note no change in avatar position or rotation at all
-        //llSetLinkPrimitiveParams(av_link,[PRIM_POSITION,local_pos,PRIM_ROTATION,local_rot]);
+        //llSetLinkPrimitiveParams(av_link,[
+        //    PRIM_POSITION,posLocal,
+        //    PRIM_ROTATION,rotLocal]
+        //);
     }
 
-    changed(integer change)
+    changed(integer _change)
     {
-        if (change & CHANGED_LINK)
+        if (_change & CHANGED_LINK)
         {
             llSleep(0.1);
-            key new_av = llAvatarOnSitTarget();
-            if (new_av != NULL_KEY)
-                avatar = new_av;
+            key avatar = llAvatarOnSitTarget();
+            if (avatar != NULL_KEY)
+                gAvatar = avatar;
 
             else
-                avatar = NULL_KEY;
+                gAvatar = NULL_KEY;
         }
     }
+
 }

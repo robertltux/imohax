@@ -33,26 +33,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-integer region_channel = 8;
-integer region_channel_handle;
+// if >0 says everything to that region channel as well, useful for TP hacks
+integer gChannel = 8;
+integer gChannelHandle;
 
-say(string text)
+say(string _text)
 {
-    llWhisper(0,text);
-    if (region_channel_handle > 0) llRegionSay(region_channel,text);
-    llMessageLinked(LINK_SET,71992513,text,NULL_KEY);
+    llWhisper(0,_text);
+    if (gChannelHandle > 0) llRegionSay(gChannel,_text);
+    llMessageLinked(LINK_SET,71992513,_text,NULL_KEY);
 }
 
-answer(string text)
+answer(string _text)
 {
-    list cur = llCSV2List(llGetSubString(text,26,-2));
+    // What is the sittarget for <pos>,<rot>?
+    list cur = llCSV2List(llGetSubString(_text,26,-2));
     vector pos = (vector) llStringTrim(llList2String(cur,0),STRING_TRIM);
     rotation rot = (rotation) llStringTrim(llList2String(cur,1),STRING_TRIM);
-    vector sit_target_pos = (pos - llGetPos()) / llGetRot();
-    sit_target_pos = sit_target_pos + <0.0,0.0,0.186>/llGetRot() - <0.0,0.0,0.4>;
-    rotation sit_target_rot = rot / llGetRot();
+
+    vector sitTargetPos   = (pos-llGetPos())/llGetRot();
+    rotation sitTargetRot = (rot/llGetRot())/llGetRot;
+
+    // correct for SL bug, which is why we don't like sit targets for offsets
+    sitTargetPos = sitTargetPos + <0.0,0.0,0.186>/llGetRot() - <0.0,0.0,0.4>;
+
     say("The sittarget for " + (string) pos + "," + (string) rot
-        + " is\n" + (string) sit_target_pos + "," + (string) sit_target_rot);
+        + " is\n" + (string) sitTargetPos + "," + (string) sitTargetRot);
 }
 
 default
@@ -60,31 +66,31 @@ default
     state_entry()
     {
         llListen(0,"",NULL_KEY,"");
-        if (region_channel>0)
+        if (gChannel>0)
         {
-            region_channel_handle = llListen(region_channel,"",NULL_KEY,"");
-            say("Communicating with region on channel " + (string) region_channel);
+            gChannelHandle = llListen(gChannel,"",NULL_KEY,"");
+            say("Communicating with region on channel " + (string) gChannel);
         }
         say("Ready. Ask me 'What is the sittarget for <pos>,<rot>?'");
         string text = "SitTarget Reporter:\n";
-        if (region_channel_handle>0) text += "Listening on 0 and " + (string) region_channel + "\n";
+        if (gChannelHandle>0) text += "Listening on 0 and " + (string) gChannel + "\n";
         else text += "Listening on 0\n";
         text += "Ask me 'What is the sittarget for <pos>,<rot>?'";
         llSetText(text,<1.0,0.0,0.0>,1.0);
     }
 
-    listen(integer channel, string name, key id, string message)
+    listen(integer _channel, string _name, key _id, string _message)
     {
-        if (llSubStringIndex(message,"What is the sittarget for ")==0)
-            answer(message);
+        if (llSubStringIndex(_message,"What is the sittarget for ")==0)
+            answer(_message);
     }
 
-    link_message(integer num, integer proto, string str, key akey)
+    link_message(integer _num, integer _proto, string _str, key _key)
     {
-        if (proto == 71992513)
+        if (_proto == 71992513)
         {
-            if (llSubStringIndex(str,"What is the sittarget for ")==0)
-                answer(str);
+            if (llSubStringIndex(_str,"What is the sittarget for ")==0)
+                answer(_str);
         }
     }
 }

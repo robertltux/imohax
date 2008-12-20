@@ -1,4 +1,4 @@
-* Update existing code to comply with LSL Style guidelines:
+* Update existing code to comply with LSL Style guidelines (just RemotePose left)
   - change variables to camelcase from _s
   - add _ before all local variables
   - add g before all global variables

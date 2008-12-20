@@ -45,20 +45,25 @@
 //http://lslwiki.net/lslwiki/wakka.php?wakka=animation although
 //these are not reliable in OpenSim currently.
 
-vector sit_target_vec = <0.0,0.0,0.01>; //no ZERO_VECTOR, that clears
-rotation sit_target_rot = ZERO_ROTATION;
-string animation = "sit";
+vector   gSitTargetPos = <0.0,0.0,0.01>; //no ZERO_VECTOR, that clears
+rotation gSitTargetRot = ZERO_ROTATION;
+string   gAnimation    = "sit";
 
 ////////////////////////////////////////////////////////////////////////////
 
-key avatar;
+key gAvatar;
 
 default{
+    
     state_entry()
     {
         state waiting_for_avatar;
     }
-    on_rez(integer p){llResetScript();}
+
+    on_rez(integer _start)
+    {
+        llResetScript();
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -67,23 +72,26 @@ state waiting_for_avatar
 {
     state_entry()
     {
-        avatar = NULL_KEY;
+        gAvatar = NULL_KEY;
 
         // SL and OpenSim can forget prim properties, so we always set
-        llSitTarget(sit_target_vec,sit_target_rot);
+        llSitTarget(gSitTargetPos,gSitTargetRot);
     }
 
-    on_rez(integer p){llResetScript();}
-
-    changed(integer change)
+    on_rez(integer _start)
     {
-        if (change & CHANGED_LINK)
+        llResetScript();
+    }
+
+    changed(integer _change)
+    {
+        if (_change & CHANGED_LINK)
         {
             llSleep(0.1); // let's av get to sit target
-            key new_avatar = llAvatarOnSitTarget();
-            if (new_avatar != NULL_KEY)
+            key avatar = llAvatarOnSitTarget();
+            if (avatar != NULL_KEY)
             {
-                avatar = new_avatar;
+                gAvatar = avatar;
                 state animating;
 
             }
@@ -97,26 +105,29 @@ state animating
 {
     state_entry()
     {
-        llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
+        llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION);
     }
 
-    on_rez(integer p){llResetScript();}
-
-    run_time_permissions(integer perms)
+    on_rez(integer _start)
     {
-        if (perms & (PERMISSION_TRIGGER_ANIMATION))
+        llResetScript();
+    }
+
+    run_time_permissions(integer _perms)
+    {
+        if (_perms & (PERMISSION_TRIGGER_ANIMATION))
         {
             llStopAnimation("sit");
-            llStartAnimation(animation);
+            llStartAnimation(gAnimation);
         }
     }
 
-    changed(integer change)
+    changed(integer _change)
     {
-        if (change & CHANGED_LINK)
+        if (_change & CHANGED_LINK)
         {
-            key new_avatar = llAvatarOnSitTarget();
-            if (llAvatarOnSitTarget()==NULL_KEY) state stopping_animation;
+            if (llAvatarOnSitTarget()==NULL_KEY)
+                state stopping_animation;
         }
     }
 }
@@ -129,8 +140,12 @@ state stopping_animation
     {
         integer perms = llGetPermissions();
         if (perms & PERMISSION_TRIGGER_ANIMATION)
-            llStopAnimation(animation);
+            llStopAnimation(gAnimation);
         state waiting_for_avatar;
     }
-    on_rez(integer p){llResetScript();}
+
+    on_rez(integer _start)
+    {
+        llResetScript();
+    }
 }
