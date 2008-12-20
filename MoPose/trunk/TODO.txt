@@ -1,0 +1,14 @@
+* Update existing code to comply with LSL Style guidelines:
+  - change variables to camelcase from _s
+  - add _ before all local variables
+  - add g before all global variables
+  - expand flattened states and methods
+* Update MoOffsetFinder to use new calculations
+* Update MoSitTargetReporter to use new calculations
+* Test creation of 'animations' notecard, document process
+* Test the sit target and one offset from animations notecard in MoPoseSimple
+* Add the remote elements to MoPoseRemote, get it working with 4.0.8 HUD
+* Full test of MoPoseRemote
+* Categorize next tasks and versions: MoPoseSingle, MoPoseMulti, MoPoseEmotes, etc
+* Finish MoSitTargetAdjuster, test against finished MoPoseSimplest
+* Comment up LocationHelper
