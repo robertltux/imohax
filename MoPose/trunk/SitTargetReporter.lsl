@@ -1,6 +1,6 @@
 // $Id$
 //
-// MAKE SURE TO REMOVE THIS SCRIPT FROM ANY CONTAINING OBJECT BEFORE GIVING OBJECT!
+// MAKE SURE TO REMOVE THIS SCRIPT BEFORE DISTRIBUTING YOUR OBJECT
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.
@@ -33,8 +33,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-// if >0 says everything to that region channel as well, useful for TP hacks
-integer gChannel = 8;
+// HOWTO:
+// 1) Drop this script in specific prim to be sat upon. Wait for Ready.
+// 2) Create any prim and sit on it.
+// 3) Play your desired animation/pose from inventory directly.
+// 4) Move prim you are sitting on so that your animated avatar appears where
+//    you like ultimately on the sit target prim. Say, 'sittarget?'
+// 5) Copy the llSitTarget() code from chat and replace or add to pose script.
+// 6) Save your pose script. Test sit on your sittable prim with new target.
+
+// This can also be used with RegionRelay to find sit targets within 300
+// meters away for building objects that us the teleport hack
+// if >0 says everything answered and spoken to the region channel as well
+integer gChannel = 0;
 integer gChannelHandle;
 
 say(string _text)
@@ -44,53 +55,80 @@ say(string _text)
     llMessageLinked(LINK_SET,71992513,_text,NULL_KEY);
 }
 
-answer(string _text)
+saySitTargetFor(list _loc)
 {
-    // What is the sittarget for <pos>,<rot>?
-    list cur = llCSV2List(llGetSubString(_text,26,-2));
-    vector pos = (vector) llStringTrim(llList2String(cur,0),STRING_TRIM);
-    rotation rot = (rotation) llStringTrim(llList2String(cur,1),STRING_TRIM);
-
-    vector sitTargetPos   = (pos-llGetPos())/llGetRot();
-    rotation sitTargetRot = (rot/llGetRot())/llGetRot;
-
-    // correct for SL bug, which is why we don't like sit targets for offsets
-    sitTargetPos = sitTargetPos + <0.0,0.0,0.186>/llGetRot() - <0.0,0.0,0.4>;
-
-    say("The sittarget for " + (string) pos + "," + (string) rot
-        + " is\n" + (string) sitTargetPos + "," + (string) sitTargetRot);
+    vector   pos = llList2Vector(_loc,0);
+    rotation rot = llList2Rot(_loc,1);
+    
+    vector   sitTargetPos = (pos-llGetPos())/llGetRot();
+    rotation sitTargetRot = (rot/llGetRot())/llGetRot();
+    
+    // correct SL sit target bug, once for this prim
+    sitTargetPos = sitTargetPos + <0.0,0.0,0.186>/llGetRot() - <0.0,0.0,0.365>;
+    
+    // and again assuming asker is sitting on something
+    sitTargetPos = sitTargetPos + <0.0,0.0,0.186>/llGetRot() - <0.0,0.0,0.365>;
+    
+    say("\nllSitTarget(" + (string) sitTargetPos + ", " 
+      + (string) sitTargetRot + ");");
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 default
 {
     state_entry()
     {
         llListen(0,"",NULL_KEY,"");
+        
         if (gChannel>0)
         {
             gChannelHandle = llListen(gChannel,"",NULL_KEY,"");
             say("Communicating with region on channel " + (string) gChannel);
         }
-        say("Ready. Ask me 'What is the sittarget for <pos>,<rot>?'");
+        
+        say("Ready.");
+        say("Ask me 'What is my sit target?' and I'll tell you.");
+        say("Or ask me 'What is the sit target for <pos>,<rot>?'");
+        
         string text = "SitTarget Reporter:\n";
-        if (gChannelHandle>0) text += "Listening on 0 and " + (string) gChannel + "\n";
-        else text += "Listening on 0\n";
-        text += "Ask me 'What is the sittarget for <pos>,<rot>?'";
+        if (gChannelHandle>0)
+        {
+            text += "Listening on 0 and " + (string) gChannel + "\n";
+        }
+        
+        else
+        {
+            text += "Listening on 0\n";
+        }
+        
+        text += "Ask me 'What is my sit target?'";
+        
         llSetText(text,<1.0,0.0,0.0>,1.0);
     }
 
+    //--------------------------------------------------------------------------
+
     listen(integer _channel, string _name, key _id, string _message)
     {
-        if (llSubStringIndex(_message,"What is the sittarget for ")==0)
-            answer(_message);
-    }
-
-    link_message(integer _num, integer _proto, string _str, key _key)
-    {
-        if (_proto == 71992513)
+        if (_message == "What is my sit target?" || _message == "sit target?"
+            || _message == "sittarget?" || _message == "target?")
         {
-            if (llSubStringIndex(_str,"What is the sittarget for ")==0)
-                answer(_str);
+            saySitTargetFor(
+                llGetObjectDetails(_id,[OBJECT_POS,OBJECT_ROT]) );
+        }
+        
+        else if (llSubStringIndex(_message,"What is the sit target for ")==0)
+        {
+            list cur = llCSV2List(llGetSubString(_message,26,-2));
+            vector pos =
+                (vector) llStringTrim(llList2String(cur,0),STRING_TRIM);
+            rotation rot = 
+                (rotation) llStringTrim(llList2String(cur,1),STRING_TRIM);
+
+            saySitTargetFor([pos,rot]);
+
         }
     }
+
 }

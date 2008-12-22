@@ -10,6 +10,7 @@
 * Finish MoSitTargetAdjuster, test against finished MoPoseSimplest
 * Comment up LocationHelper
 * Add sensing of language with llGetAgentLanguage()
+* Add a simple RegionRelay for finding sit targets for TP hacks
 
 //TODO make it reposition based on the animations notecard, but only if needed
 //TODO make it hide the poseball on sit
