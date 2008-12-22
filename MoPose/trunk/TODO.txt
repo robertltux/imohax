@@ -1,4 +1,4 @@
-* Update AnimAdjustmentFinder to use new calculations, test
+* Test AnimAdjustmentFinder adjustments in MultiPose as 'animations'
 * Update SitTargetReporter to use new calculations, test
 * Update RemotePose with new calculations, test
 * Test creation of 'animations' notecard, document process
@@ -9,6 +9,7 @@
 * Categorize next tasks and versions: MoPoseSingle, MoPoseMulti, MoPoseEmotes, etc
 * Finish MoSitTargetAdjuster, test against finished MoPoseSimplest
 * Comment up LocationHelper
+* Add sensing of language with llGetAgentLanguage()
 
 //TODO make it reposition based on the animations notecard, but only if needed
 //TODO make it hide the poseball on sit
@@ -20,3 +21,5 @@
 //TODO make it jump 5 at a time if control is held down
 //TODO make it read multiple animations notecards if found
 //TODO internationalize, pull out any text into messages_EN notecard
+
+Explore the idea of 'owner-only' menu on touch event that activates animation adjustment tool, with memory of adjustment as well as saying values for persistent storage in 'animations' notecard

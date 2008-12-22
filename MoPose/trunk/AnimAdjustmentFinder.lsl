@@ -31,207 +31,210 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-// should leave this 0 and say 'set region channel <channel>' command
-integer gChannel = 0;
-integer gChannelHandle = 0;
-
-// always local to the containing prim, rarely (if ever) changed
+// completely ignored in calculations, set whatever is easiest to sit and move
 vector   gLocalSitTargetPos = <0.0,0.0,0.01>;
 rotation gLocalSitTargetRot = ZERO_ROTATION;
 
-// sit target of final sit prim, if containing prim is final prim, will be same
-vector   gSitTargetPos = gLocalSitTargetPos;
-rotation gSitTargetRot = gLocalSitTargetRot;
+// name of persistent (cache) notecard, will preload on reset or 'set home'
+string gCardName = "animations"; // adjustments, offsets, whatever
 
-// containing prim regional position and rotation, all offsets from this,
-// stores each time 'set home' is called
-vector   gHomePos = ZERO_VECTOR;
-rotation gHomeRot = ZERO_ROTATION;
+// 'set home' stores regional position and rotation of avatar
+vector   gHomePos         = ZERO_VECTOR;
+rotation gHomeRot         = ZERO_ROTATION;
+vector   gLastHomePos     = ZERO_VECTOR;
+rotation gLastHomeRot     = ZERO_ROTATION;
+vector   gLastHomePrimPos = ZERO_VECTOR;
+rotation gLastHomePrimRot = ZERO_ROTATION;
 
-// poor man's hash table of adjustment data
-list gNames;
-list gPositions;
-list gRotations;
+// 'set home' stores the prim position and rotation in region coordinates
+vector   gHomePrimPos = ZERO_VECTOR;
+rotation gHomePrimRot = ZERO_ROTATION;
 
-integer gWaitingForSitTarget = FALSE;
-string  gNameLastUsed = "myoffset";
-string  gStartingText = "SitTarget and Offset Tool\n(have a seat)";
+// hash table of adjustment data
+list gAdjNames;
+list gAdjPoss;
+list gAdjRots;
+list gAdjPrimPoss;
+list gAdjPrimRots;
 
-key     gCurrentQuery;
-integer gCurrentQueryLine;
+// stores the current position in region coordinates
+vector   gAvatarPos;
+rotation gAvatarRot;
+vector   gPrimPos;
+rotation gPrimRot;
 
-////////////////////////////////////////////////////////////////////////////////
+// stores the difference between current and home as adjustment
+string   gAdjName    = "";
+vector   gAdjPos     = ZERO_VECTOR;
+rotation gAdjRot     = ZERO_ROTATION;
+vector   gAdjPrimPos = ZERO_VECTOR;
+rotation gAdjPrimRot = ZERO_ROTATION;
 
-vector avatarPos()
-{
-    vector prim_p = llGetPos();
-    rotation prim_r = llGetRot();
-    // corrects SL error between actual avatar pos and llGetPos while seated
-    return prim_p + (gLocalSitTargetPos * prim_r)
-        - <0,0,0.186> + <0,0,0.4> * prim_r;
-}
+string gStartingText = "Animation Adjustment Tool\n(have a seat)";
 
-rotation avatarRot()
-{
-    return llGetRot() / gLocalSitTargetRot;
-}
-
-vector posAdjustment()
-{
-    return llGetPos() - gHomePos;
-}
-
-rotation rotAdjustment()
-{
-    return llGetRot() - gHomeRot;
-}
+key gAvatar = NULL_KEY;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-showHelp()
+updateCurrent()
 {
-    llOwnerSay("Help text here.");
+    list details = llGetObjectDetails(gAvatar,[OBJECT_POS,OBJECT_ROT]);
+    gAvatarPos = llList2Vector(details,0);
+    gAvatarRot = llList2Rot(details,1);
+
+    gPrimPos = llGetRootPosition();
+    gPrimRot = llGetRootRotation();
+
+    gAdjPos = (gAvatarPos-gHomePos)/gHomeRot;
+    gAdjRot = gAvatarRot/gHomeRot;
+
+    gAdjPrimPos = (gPrimPos-gHomePrimPos)/gHomePrimRot;
+    gAdjPrimRot = gPrimRot/gHomePrimRot;
 }
 
-showHome()
-{
-    say("HOME:\n" + (string) gHomePos + "," + (string) gHomeRot);
-}
+//------------------------------------------------------------------------------
 
-showSitTarget()
+save(string _name)
 {
-    say("SITTARGET:\n" + (string) gSitTargetPos +
-        "," + (string) gSitTargetRot);
-}
-
-setSitTarget(string _message)
-{
-    integer start = llSubStringIndex(_message, "is\n") + 3;
-    string parseme = llStringTrim(llGetSubString(_message,start,-1),STRING_TRIM);
-    list p = llCSV2List(parseme);
-    string vecStr = llList2String(p,0);
-    string rotStr = llList2String(p,1);
-    if ((vector) vecStr != ZERO_VECTOR)
+    if (_name == "") _name = gAdjName;
+    else gAdjName = _name;
+    
+    if (_name == "" || gAvatar == NULL_KEY)
     {
-        gSitTargetPos = (vector) vecStr;
-        gSitTargetRot = (rotation) rotStr;
-        showSitTarget();
+        say("?");
+        return;
     }
-    else
+
+    if (_name == "home")
     {
-        say("Sorry, try another besides zero change");
-
+        updateHome();
+        show("home");
+        return;
     }
-    gWaitingForSitTarget = FALSE;
-}
 
-setOffset(string _name)
-{
-    if (_name == "") _name = gNameLastUsed;
-    else gNameLastUsed = _name;
+    updateCurrent();
+    
+    integer i = llListFindList(gAdjNames,[_name]);
 
-    integer i = llListFindList(gNames,[_name]);
-
-    vector v = posAdjustment();
-    rotation r = rotAdjustment();
-    string line = _name + ", " + (string) v + ", " + (string) r;
+    string line = _name + ", " + (string) gAdjPos + ", " + (string) gAdjRot;
 
     if (i >= 0 )
     {
-        gNames = llListReplaceList(gNames,[_name],i,i);
-        gPositions = llListReplaceList(gPositions,[v],i,i);
-        gRotations = llListReplaceList(gRotations,[r],i,i);
-        say("UPDATED:\n" + line);
+        gAdjNames    = llListReplaceList(gAdjNames,[_name],i,i);
+        gAdjPoss     = llListReplaceList(gAdjPoss,[gAdjPos],i,i);
+        gAdjRots     = llListReplaceList(gAdjRots,[gAdjRot],i,i);
+        gAdjPrimPoss = llListReplaceList(gAdjPrimPoss,[gAdjPrimPos],i,i);
+        gAdjPrimRots = llListReplaceList(gAdjPrimRots,[gAdjPrimRot],i,i);
     }
     else
     {
-        gNames += [_name];
-        gPositions += [v];
-        gRotations += [r];
-        say("SAVED:\n" + line);
+        gAdjNames    += [gAdjName];
+        gAdjPoss     += [gAdjPos];
+        gAdjRots     += [gAdjRot];
+        gAdjPrimPoss += [gAdjPrimPos];
+        gAdjPrimRots += [gAdjPrimRot];
     }
+
+    say(line);
 }
 
-showOffset(string _name)
+//------------------------------------------------------------------------------
+
+show(string _name)
 {
-    if (_name == "")
-        say("OFFSET:\n" + (string) posAdjustment() +
-        "," + (string) rotAdjustment());
-    else
+    if (_name == "" || _name == "all")
     {
-        integer i = llListFindList(gNames,[_name]);
-        if (i<0)
-            say("Offset '" + _name + "' not found. Try 'set " + _name +"' first.");
-        else
-            say("SHOW:\n" + _name + ","
-                + llList2String(gPositions,i) + ","
-            + llList2String(gRotations,i) );
-    }
-}
+        string buffer;
+        integer i;
+        integer start = 1;
+        integer max = llGetListLength(gAdjNames);
 
-showAll()
-{
-    string buffer;
-    integer i;
-    integer start = 1;
-    integer max = llGetListLength(gNames);
-
-    for (i=0; i<max; i++)
-    {
-        if (i==0)
-            buffer = "SITTARGET," + (string) gSitTargetPos + "," + (string) gSitTargetRot;
-
-        buffer += "\n" + llList2String(gNames,i)
-            + ", " + llList2String(gPositions,i)
-            + ", " + llList2String(gRotations,i);
-
-        if ( (i+1) % 10 == 0)
+        for (i=0; i<max; i++)
         {
-            say("OFFSETS " + (string) (i-10) + "-" + (string) (i+1) + ":\n" + buffer + "\n");
-            start = i+2;
-            buffer = "";
+            buffer += "\n" + llList2String(gAdjNames,i)
+                + ", " + llList2String(gAdjPoss,i)
+                + ", " + llList2String(gAdjRots,i);
+
+            if ( (i+1) % 10 == 0)
+            {
+                say((string) (i-10) + "-" + (string) (i+1) 
+                    + ":\n" + buffer + "\n");
+                start = i+2;
+                buffer = "";
+            }
+        }
+
+        if (buffer != "")
+        {
+            say((string) start + "-" + (string) (i) + ":\n" + buffer + "\n");
         }
     }
 
-    if (buffer != "")
-        say("OFFSETS " + (string) start + "-" + (string) (i) + ":\n" + buffer + "\n");
+    else if (_name == "last")
+    {
+        say("\n" + gAdjName + "," + (string) gAdjPos + "," + (string) gAdjRot);
+    }
+
+    else if (_name == "home")
+    {
+        say("\nhome," + (string) gHomePos + "," + (string) gHomeRot);
+    }
+
+    else
+    {
+        integer i = llListFindList(gAdjNames,[_name]);
+        if (i<0) say(_name + "?");
+        else
+        {
+            say("\n" + _name + "," + llList2String(gAdjPoss,i)
+                + "," + llList2String(gAdjRots,i) );
+        }
+    }
 }
 
-setHome()
+//------------------------------------------------------------------------------
+
+updateHome()
 {
+    updateCurrent();
 
-    // sittarget or not, we set home to regional settings so offset cmds will work
-    gHomePos = llGetPos();
-    gHomeRot = llGetRot();
+    gLastHomePos     = gHomePos;
+    gLastHomeRot     = gHomeRot;
+    gLastHomePrimPos = gHomePrimPos;
+    gLastHomePrimRot = gHomePrimRot;
 
-    say("What is the sittarget for " + (string) avatarPos()
-        + "," + (string) avatarRot() + "?");
-    gWaitingForSitTarget = TRUE;
+    gHomePos     = gAvatarPos;
+    gHomeRot     = gAvatarRot;
+    gHomePrimPos = gPrimPos;
+    gHomePrimRot = gPrimRot;
 
-    // and we always clear any offsets so new will be from current new home
-    gNames = [];
-    gPositions = [];
-    gRotations = [];
+    integer i;
+    integer max = llGetListLength(gAdjNames);
 
-    // and end with loading persistent offsets from notecard
-    if (llGetInventoryType("offsets")==INVENTORY_NOTECARD)
-        gCurrentQuery = llGetNotecardLine("offsets",gCurrentQueryLine);
+    // just clear all saved adjustments since recalculating all from new home
+    // would require calculations involving buggy sit target
+    gAdjNames    = [];
+    gAdjPoss     = [];
+    gAdjRots     = [];
+    gAdjPrimPoss = [];
+    gAdjPrimRots = [];
 }
 
-moveTo(string _name, vector _p, rotation _r)
+//------------------------------------------------------------------------------
+
+moveTo(string _name, vector _pos, rotation _rot)
 {
-    say("Moving to " + _name + ":\n" +(string) _p + "," + (string) _r);
+    say(_name + ":\n" +(string) _pos + "," + (string) _rot);
 
     integer max = 100;
     integer i = 0;
-    llSetPos(_p);
-    llSetRot(_r);
-    while (llGetPos() != _p) {
-        llSetPos(_p);
-        llSetRot(_r);
+
+    llSetPrimitiveParams([PRIM_POSITION,_pos,PRIM_ROTATION,_rot]);
+
+    while (llGetPos() != _pos) {
+        llSetPrimitiveParams([PRIM_POSITION,_pos,PRIM_ROTATION,_rot]);
         if (i == max)
         {
-            say("Failed to reach home. Something blocking. Giving up.");
             jump OutAgain;
         }
         ++i;
@@ -239,35 +242,50 @@ moveTo(string _name, vector _p, rotation _r)
     @OutAgain;
 }
 
-goHome()
-{
-    moveTo("HOME", gHomePos, gHomeRot);
-}
+//------------------------------------------------------------------------------
 
-goOffset(string _name)
+go(string _name)
 {
-    if (_name == "") _name = gNameLastUsed;
+    updateCurrent();
 
-    integer i = llListFindList(gNames,[_name]);
-    if (i<0)
+    if (_name == "")
     {
-        say("Offset name (" + _name
-            + ") not found. Try 'set " + _name +"' first.");
+        _name = gAdjName;
     }
 
-    moveTo(_name, gHomePos + llList2Vector(gPositions,i),
-        gHomeRot + llList2Rot(gRotations,i));
+    else if (_name == "home")
+    {
+        moveTo("home",gHomePrimPos,gHomePrimRot);
+        return;
+    }
 
+    integer i = llListFindList(gAdjNames,[_name]);
+    if (i<0)
+    {
+        say(_name + "?");
+    }
+
+    else
+    {
+        vector   adjPrimPos = llList2Vector(gAdjPrimPoss,i);
+        rotation adjPrimRot = llList2Rot(gAdjPrimRots,i);
+
+        vector   newPrimPos = gHomePrimPos + (adjPrimPos * gHomePrimRot);
+        rotation newPrimRot = gHomePrimRot * adjPrimRot;
+
+        moveTo(_name, newPrimPos, newPrimRot);
+        return;
+    }
 }
+
+//------------------------------------------------------------------------------
 
 say(string _text)
 {
     llWhisper(0,_text);
-    if (gChannelHandle > 0) llRegionSay(gChannel,_text);
-    llMessageLinked(LINK_SET,71992513,_text,NULL_KEY);
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 default
 {
@@ -275,142 +293,58 @@ default
     {
         llSitTarget(gLocalSitTargetPos, gLocalSitTargetRot);
         llSetText(gStartingText,<1.0,0.0,0.0>,1.0);
-        llListen(0,"",NULL_KEY,"");
-        if (gChannel>0) gChannelHandle = llListen(gChannel,"",NULL_KEY,"");
-        setHome();
+        llListen(0,"",NULL_KEY,""); // just a temp tool, so ok
     }
 
-    listen(integer channel, string name, key id, string message)
+    listen(integer _channel, string _name, key _id, string _text)
     {
-        if (   message == "sethome" || message == "set home"
-            || message == "set sittarget"
-            || message == "set sit target"
-            || message == "save sittarget"
-            || message == "save sit target") setHome();
-        else if (gWaitingForSitTarget &&
-            llSubStringIndex(message,"The sittarget for " + (string) avatarPos()
-                + "," + (string) avatarRot())==0)
-            setSitTarget(message);
-        else if (llSubStringIndex(message,"set region channel ")==0)
+        if (llSubStringIndex(_text,"show")==0)
         {
-            integer chan = (integer) llStringTrim(llGetSubString(message, 19, -1)
-                ,STRING_TRIM);
-            if (chan > 0)
-            {
-                if (gChannelHandle > 0)
-                {
-                    say("Closing communication with entire region on channel "
-                        + (string) gChannel);
-                    llListenRemove(gChannelHandle);
-                }
-                gChannel = chan;
-                gChannelHandle = llListen(gChannel, "", NULL_KEY, "");
-                say("Now communicating with entire region on channel "
-                    + (string) gChannel);
-            }
-            else
-            {
-                llListenRemove(gChannelHandle);
-                gChannelHandle = 0;
-                say("Communication with entire region now closed");
-            }
+            string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
+            if (name == "show") name = "";
+            show(name);
         }
-        else if (message == "gohome" || message == "go home"
-            || message == "go sittarget" || message == "go sit target") goHome();
-        else if (message == "home" || message == "show home") showHome();
-        else if (message == "offset" || message == "show offset") showOffset("");
-        else if (message == "show" || message == "show all") showAll();
-        else if (message == "sittarget" || message == "show sittarget"
-            || message == "show sit target") showSitTarget();
-        else if (message == "help") showHelp();
 
+        else if (llSubStringIndex(_text, "save") == 0)
+        {
+            string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
+            if (name == "save") name = "";
+            save(name);
+        }
 
-        else if (llSubStringIndex(message,"show offset ")==0)
-            showOffset(llGetSubString(message,12,-1));
-        else if (llSubStringIndex(message,"show ")==0)
-            showOffset(llGetSubString(message,5,-1));
+        else if (llSubStringIndex(_text, "go") == 0)
+        {
+            string name = llStringTrim(llGetSubString(_text,2,-1),STRING_TRIM);
+            if (name == "go") name = "";
+            go(name);
+        }
+        
+        else if (_text == "stand")
+        {
+            if (gAvatar!=NULL_KEY) llUnSit(gAvatar);
+        }
 
-
-        else if (llSubStringIndex(message, "save offset ")==0)
-            setOffset(llGetSubString(message,12,-1));
-        else if (llSubStringIndex(message, "set offset ")==0)
-            setOffset(llGetSubString(message, 11, -1));
-        else if (llSubStringIndex(message, "set ") == 0)
-            setOffset(llGetSubString(message, 4,-1));
-        else if (llSubStringIndex(message, "save ") == 0)
-            setOffset(llGetSubString(message, 5, -1));
-        else if (message == "save" || message == "set")
-            setOffset(gNameLastUsed);
-
-        else if (llSubStringIndex(message, "go ") == 0)
-            goOffset(llGetSubString(message,3,-1));
-        else if (message == "go last" || message == "golast")
-            goOffset(gNameLastUsed);
-
-        else if (message == "last") showOffset(gNameLastUsed);
     }
 
     changed(integer _change)
     {
         if (_change & CHANGED_LINK)
         {
-            llSleep(0.5);
-            key sitter = llAvatarOnSitTarget();
-            if (sitter != NULL_KEY)
+            llSleep(0.1);
+            key avatar = llAvatarOnSitTarget();
+            if (avatar != NULL_KEY)
             {
-                llRequestPermissions(sitter, PERMISSION_TRIGGER_ANIMATION);
+                gAvatar = avatar;
+                llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION);
                 llStopAnimation("sit");
-                if (gHomePos == ZERO_VECTOR) say("No home (sittarget) position set. Awaiting 'set home' (or 'set sittarget').");
                 llSetText("",ZERO_VECTOR,1.0);
-                showHelp();
+                if (gHomePos == ZERO_VECTOR) updateHome();
             }
             else
             {
                 llSetText(gStartingText,<1.0,0.0,0.0>,1.0);
+                gAvatar = NULL_KEY;
             }
-        }
-    }
-
-    dataserver(key _query, string _data)
-    {
-        if (_data != EOF)
-        {
-            list d = llCSV2List(_data);
-            string name = llList2String(d,0);
-            vector v = (vector) llStringTrim(llList2String(d,1),STRING_TRIM);
-            rotation r = (rotation) llStringTrim(llList2String(d,2),STRING_TRIM);
-
-            if (name=="SITTARGET")
-            {
-                gSitTargetPos = v;
-                gSitTargetRot = r;
-            }
-            else
-            {
-                gNames += name;
-                gPositions += v;
-                gRotations += r;
-            }
-            gCurrentQueryLine++;
-            gCurrentQuery = llGetNotecardLine("offsets", gCurrentQueryLine);
-
-        }
-        else
-        {
-            gCurrentQuery = NULL_KEY;
-            gCurrentQueryLine = 0;
-        }
-    }
-
-    link_message(integer _num, integer _proto, string _str, key _key)
-    {
-        llOwnerSay(_str);
-        if (_proto == 71992513)
-        {
-            if (gWaitingForSitTarget &&
-                llSubStringIndex(_str,"The sittarget for " + (string) avatarPos()
-                    + "," + (string) avatarRot())==0)
-                setSitTarget(_str);
         }
     }
 

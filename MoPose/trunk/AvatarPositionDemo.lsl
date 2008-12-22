@@ -87,8 +87,6 @@ default
             return;
         }
 
-
-
         // fetches the absolute region position and rotation of avatar
         // (without errors that would be introduced deriving from sit target)
         list details = llGetObjectDetails(gAvatar,[OBJECT_POS,OBJECT_ROT]);
