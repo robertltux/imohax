@@ -1,14 +1,4 @@
 // $Id$
-//TODO make it reposition based on the animations notecard, but only if needed
-//TODO make it hide the poseball on sit
-//TODO make animations notecard optional
-//TODO autodetect changes to inventory and update script
-//TODO make it say the animation name or friendly name when changed
-//TODO make it read a special PAGE: line in the animations notecard
-//TODO make it show different animation menus IM to sitter only with PGUP
-//TODO make it jump 5 at a time if control is held down
-//TODO make it read multiple animations notecards if found
-//TODO internationalize, pull out any text into messages_EN notecard
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.
@@ -41,78 +31,79 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-key current_query;
-integer data_line;
+key     gCurrentQuery;
+integer gCurrentQueryLine;
 
-vector sit_target_vec = <0.0,0.0,0.01>;
-rotation sit_target_rot = <0.0,0.0,0.0,1.0>;
+vector   gSitTargetPos = <0.0,0.0,0.01>; // never ZERO_VECTOR, which clears
+rotation gSitTargetRot = ZERO_ROTATION;
 
-list anim_names;
-list anim_offset_vectors;
-list anim_offset_rotations;
-list anim_aliases;
-list anim_durations;
-integer total_anims;
+// hash table of animation data
+list gAnimNames;
+list gAnimPoss;
+list gAnimRots;
+list gAliases;
+list gAnimDurations;
 
-string current_anim_name;
-string current_anim_vec;
-string current_anim_rot;
-string current_anim_alias;
-string current_anim_dur;
+integer gNumOfAnims;
+integer gCurrentAnim = 0;
 
-key avatar;
-integer avatar_link;
-string avatar_name;
-vector avatar_pos;
-vector avatar_local_pos;
-rotation avatar_rot;
-rotation avatar_local_rot;
-vector avatar_velocity;
+// current animation placeholders
+string  gAnimName;
+string  gAnimPos;
+string  gAnimRot;
+string  gAnimAlias;
+string  gAnimDuration;
+
+key      gAvatar;
+integer  gAvatarLink;
+string   gAvatarName;
+vector   gAvatarPos;
+vector   gAvatarLocalPos;
+rotation gAvatarRot;
+rotation gAvatarLocalRot;
+vector   gAvatarVelocity;
 
 ////////////////////////////////////////////////////////////////////////////
 
-integer current_anim = 0;
-
 playNext()
 {
-    integer next = current_anim+1;
-    if (next <= total_anims) play(next);
+    integer next = gCurrentAnim+1;
+    if (next <= gNumOfAnims) play(next);
     else play(1);
 }
 
 playPrev()
 {
-    integer prev = current_anim-1;
+    integer prev = gCurrentAnim-1;
     if (prev >= 1) play(prev);
-    else play(total_anims);
+    else play(gNumOfAnims);
 }
 
-play(integer i)
+play(integer _index)
 {
-    if (current_anim_name != "")
-        llStopAnimation(current_anim_name);
+    if (gAnimName != "") llStopAnimation(gAnimName);
 
-    current_anim = i;
-    current_anim_name = llList2String(anim_names,i);
-    current_anim_vec = llList2String(anim_offset_vectors,i);
-    current_anim_rot = llList2String(anim_offset_rotations,i);
-    current_anim_alias = llList2String(anim_aliases,i);
-    current_anim_dur = llList2String(anim_durations,i);
+    gCurrentAnim  = _index;
+    gAnimName     = llList2String(gAnimNames,_index);
+    gAnimPos      = llList2String(gAnimPoss,_index);
+    gAnimRot      = llList2String(gAnimRots,_index);
+    gAnimAlias    = llList2String(gAliases,_index);
+    gAnimDuration = llList2String(gAnimDurations,_index);
 
-    rotation new_rot = avatar_local_rot * (rotation) current_anim_rot;
-    vector new_pos = avatar_local_pos +
-        (vector) current_anim_vec;
+    //FIXME: this is wrong, change to match AvLocationDemo
+    rotation rot = gAvatarLocalRot * (rotation) gAnimRot;
+    vector pos   = gAvatarLocalPos + (vector) gAnimPos;
 
-    llOwnerSay("sit_target_vec: " + (string) sit_target_vec);
-    llOwnerSay("sit_target_rot: " + (string) sit_target_rot);
-        llOwnerSay("avatar_local_pos: " + (string) avatar_local_pos);
-    llOwnerSay("avatar_local_rot: " + (string) avatar_local_rot);
+    llOwnerSay("gSitTargetPos: " + (string) gSitTargetPos);
+    llOwnerSay("gSitTargetRot: " + (string) gSitTargetRot);
+    llOwnerSay("gAvatarLocalPos: " + (string) gAvatarLocalPos);
+    llOwnerSay("gAvatarLocalRot: " + (string) gAvatarLocalRot);
 
-    llOwnerSay("new_p: " + (string) new_pos);
-    llOwnerSay("new_r: " + (string) new_rot);
-    llSetLinkPrimitiveParams(avatar_link,
-        [PRIM_POSITION,new_pos,PRIM_ROTATION,new_rot]);
-   llStartAnimation(current_anim_name);
+    llOwnerSay("pos: " + (string) pos);
+    llOwnerSay("rot: " + (string) rot);
+    llSetLinkPrimitiveParams(gAvatarLink,
+        [PRIM_POSITION,pos,PRIM_ROTATION,rot]);
+    llStartAnimation(gAnimName);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -138,56 +129,56 @@ state reading_animations_notecard
             state error;
         }
 
-        data_line = 0;
-        current_query = NULL_KEY;
+        gCurrentQueryLine = 0;
+        gCurrentQuery = NULL_KEY;
 
-        anim_names = [""];
-        anim_offset_vectors = [""];
-        anim_offset_rotations = [""];
-        anim_aliases = [""];
-        anim_durations = [""];
-        total_anims = 0;
+        gAnimNames = [""];
+        gAnimPoss = [""];
+        gAnimRots = [""];
+        gAliases = [""];
+        gAnimDurations = [""];
+        gNumOfAnims = 0;
 
         llOwnerSay("Reading animations notecard ...");
 
-        current_query = llGetNotecardLine("animations",data_line);
+        gCurrentQuery = llGetNotecardLine("animations",gCurrentQueryLine);
     }
 
-    dataserver(key query, string data)
+    dataserver(key _query, string _data)
     {
-        if (data == EOF) state ready;
-        if (query == current_query)
+        if (_data == EOF) state ready;
+        if (_query == gCurrentQuery)
         {
-            list p = llCSV2List(data);
+            list p = llCSV2List(_data);
             string name = llStringTrim(llList2String(p,0),STRING_TRIM);
-            string offset_v = llStringTrim(llList2String(p,1),STRING_TRIM);
-            string offset_r = llStringTrim(llList2String(p,2),STRING_TRIM);
+            string pos = llStringTrim(llList2String(p,1),STRING_TRIM);
+            string rot = llStringTrim(llList2String(p,2),STRING_TRIM);
             string alias = llStringTrim(llList2String(p,3),STRING_TRIM);
             string duration = llStringTrim(llList2String(p,4),STRING_TRIM);
-            if (offset_v == "") offset_v = "<0.0,0.0,0.0>";
-            if (offset_r == "") offset_r = "<0.0,0.0,0.0,1.0>";
+            if (pos == "") pos = "<0.0,0.0,0.0>";
+            if (rot == "") rot = "<0.0,0.0,0.0,1.0>";
 
             if (name == "")
             {
-                llOwnerSay("WARNING: Skipping animation with no name: " + data);
+                llOwnerSay("WARNING: Skipping animation with no name: " + _data);
             }
             else if (name == "SITTARGET")
             {
-                sit_target_vec = (vector) offset_v;
-                sit_target_rot = (rotation) offset_r;
+                gSitTargetPos = (vector) pos;
+                gSitTargetRot = (rotation) rot;
             }
             else
             {
-                anim_names += name;
-                anim_offset_vectors += offset_v;
-                anim_offset_rotations += offset_r;
-                anim_aliases += alias;
-                anim_durations += duration;
-                ++total_anims;
+                gAnimNames += name;
+                gAnimPoss += pos;
+                gAnimRots += rot;
+                gAliases += alias;
+                gAnimDurations += duration;
+                ++gNumOfAnims;
             }
 
-            ++data_line;
-            current_query = llGetNotecardLine("animations",data_line);
+            ++gCurrentQueryLine;
+            gCurrentQuery = llGetNotecardLine("animations",gCurrentQueryLine);
         }
     }
 }
@@ -209,36 +200,38 @@ state waiting_for_avatar
 {
     state_entry()
     {
-        avatar = NULL_KEY;
-        avatar_link = 0;
-        avatar_name = "";
-        avatar_pos = ZERO_VECTOR;
-        avatar_rot = ZERO_ROTATION;
-        avatar_local_pos = ZERO_VECTOR;
-        avatar_local_rot = ZERO_ROTATION;
-        avatar_velocity = ZERO_VECTOR;
+        gAvatar = NULL_KEY;
+        gAvatarLink = 0;
+        gAvatarName = "";
+        gAvatarPos = ZERO_VECTOR;
+        gAvatarRot = ZERO_ROTATION;
+        gAvatarLocalPos = ZERO_VECTOR;
+        gAvatarLocalRot = ZERO_ROTATION;
+        gAvatarVelocity = ZERO_VECTOR;
 
-        llSitTarget(sit_target_vec, sit_target_rot);
+        llSitTarget(gSitTargetPos, gSitTargetRot);
     }
 
-    changed(integer change)
+    changed(integer _change)
     {
-        if (change & CHANGED_LINK)
+        if (_change & CHANGED_LINK)
         {
             llSleep(0.1); // let's av get to sit target
-            key new_avatar = llAvatarOnSitTarget();
-            if (new_avatar != NULL_KEY)
+            key avatar = llAvatarOnSitTarget();
+            if (avatar != NULL_KEY)
             {
-                avatar = new_avatar;
-                avatar_link = llGetNumberOfPrims();
-                list details = llGetObjectDetails(avatar,[
+                vector   rootPos = llGetRootPosition();
+                rotation rootRot = llGetRootRotation();
+                gAvatar = avatar;
+                gAvatarLink = llGetNumberOfPrims();
+                list details = llGetObjectDetails(gAvatar,[
                     OBJECT_NAME, OBJECT_POS, OBJECT_ROT, OBJECT_VELOCITY]);
-                avatar_name = llList2String(details,0);
-                avatar_pos = llList2Vector(details,1);
-                avatar_rot = llList2Rot(details,2);
-                avatar_velocity = llList2Vector(details,3);
-                avatar_local_pos = (avatar_pos - llGetRootPosition())/llGetRootRotation();
-                avatar_local_rot = avatar_rot / llGetRootRotation();
+                gAvatarName = llList2String(details,0);
+                gAvatarPos = llList2Vector(details,1);
+                gAvatarRot = llList2Rot(details,2);
+                gAvatarVelocity = llList2Vector(details,3);
+                gAvatarLocalPos = (gAvatarPos-rootPos)/rootRot;
+                gAvatarLocalRot = (gAvatarRot/rootRot)/rootRot;
                 state animating;
             }
         }
@@ -251,7 +244,7 @@ state animating
 {
     state_entry()
     {
-        llRequestPermissions(avatar, PERMISSION_TRIGGER_ANIMATION
+        llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION
             | PERMISSION_TAKE_CONTROLS);
     }
 
@@ -260,24 +253,23 @@ state animating
         if (perms & (PERMISSION_TRIGGER_ANIMATION | PERMISSION_TAKE_CONTROLS))
         {
             llStopAnimation("sit");
-            if (current_anim == 0) current_anim = 1;
-            play(current_anim);
+            if (gCurrentAnim == 0) gCurrentAnim = 1;
+            play(gCurrentAnim);
             llTakeControls(CONTROL_RIGHT|CONTROL_LEFT, TRUE, FALSE);
         }
     }
 
-    control(key id, integer held, integer change)
+    control(key _id, integer _held, integer _change)
     {
-        if (held & change & CONTROL_RIGHT) playNext();
-        if (held & change & CONTROL_LEFT) playPrev();
+        if (_held & _change & CONTROL_RIGHT) playNext();
+        if (_held & _change & CONTROL_LEFT)  playPrev();
     }
 
-    changed(integer change)
+    changed(integer _change)
     {
-        if (change & CHANGED_LINK)
+        if (_change & CHANGED_LINK)
         {
-            key new_avatar = llAvatarOnSitTarget();
-            if (new_avatar == NULL_KEY) state stopping_animation;
+            if (llAvatarOnSitTarget() == NULL_KEY) state stopping_animation;
         }
     }
 }
@@ -291,7 +283,7 @@ state stopping_animation
         llReleaseControls();
         integer perms = llGetPermissions();
         if (perms & PERMISSION_TRIGGER_ANIMATION)
-            llStopAnimation(current_anim_name);
+            llStopAnimation(gAnimName);
         state waiting_for_avatar;
     }
 }
