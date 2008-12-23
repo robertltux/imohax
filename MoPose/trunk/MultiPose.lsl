@@ -1,4 +1,4 @@
-// $Id: RemotePose.lsl 7 2008-12-22 17:58:28Z imohax $
+// $Id$
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.
