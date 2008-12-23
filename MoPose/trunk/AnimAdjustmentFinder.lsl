@@ -31,7 +31,51 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-// completely ignored in calculations, set whatever is easiest to sit and move
+// HOWTO: Put this script into a prim, activate, sit, move prim around, save:
+// 1) Create a prim (sphere works), don't link it yet to your final creation
+// 2) Put this script into the contents of your new prim
+// 3) Wait for Ready, then sit on the prim with this script in it
+// 4) Find your animations to get adjustments for in inventory
+// 5) Start your first animation/pose by double-clicking it from inventory
+// 6) Move the prim you are sitting on so your animated/posing avatar is good
+// 7) Say 'set home' to save home position and rotation and clear prev adjusts
+//        ('go home' always returns prim back home (with you sitting on it))
+//        ('show home' displays values)
+// 8) Say 'save <myanim>' replacing <myanim> with your playing anim name
+//        (you can 'save' again to update it anytime until next 'save <myanim>')
+//        ('go <myanim>' moves you to that saved position and rotation)
+// 9) Say 'show' or 'show <myanim>' or 'show last' to confirm save
+//        ('show <myanim>' diplays values, 'show' displays all saved)
+// 10) Stop the saved animation you started from inventory
+// 11) Start the next animation to adjust from inventory
+//        (you may need to stand up and reset to clear animation artifacts)
+// 12) Move the prim like before to make your avatar look correctly placed
+// 13) Repeat steps 8-12 for all animations/poses
+// 14) Say 'show' to copy and paste the chat text into an 'animations' notecard
+// 15) If more than 10 animations cleanup the extra chat from notecard
+//
+// At this point you can either
+//     1) link the adjust prim into your object as the sit prim
+//     2) use some prim from your object as the sit prim
+//
+// If you choose (1):
+//     1) Say 'go home' to position the adjust prim at home
+//     2) Stand up ('stand' command helps)
+//     3) Link in your adjust prim, it can be root or child, no matter
+//     4) Remove or deactivate this script in the new sit prim (former adjust)
+//     5) For animations that require it, place copies in new sit prim contents
+//     6) Copy your 'animations' notecard into the new sit prim (not root)
+//     7) Copy in pose script with 'animations' notecard (MultiPose, etc)
+//     8) Cut and paste the sit target from this script into pose script
+//
+// If you choose (2):
+//     Do everything for (1), but place everything into your sit prim.
+//     Take care to set sit target specific to your sit prim. It will NOT
+//     be the same as that from this script. Use SitTargetReporter to help.
+//     The 'home' position will be at your sit prim's sit target.
+ 
+// completely ignored in calculations, set whatever is easiest to sit and move,
+// pick a good one if linking in this prim as final sit prim
 vector   gLocalSitTargetPos = <0.0,0.0,0.01>;
 rotation gLocalSitTargetRot = ZERO_ROTATION;
 

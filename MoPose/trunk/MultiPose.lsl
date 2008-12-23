@@ -35,7 +35,7 @@
 key     gCurrentQuery;
 integer gCurrentQueryLine;
 
-// overriden by SITTARGET line in animations notecard if found
+// overriden by SITTARGET line in animations notecard if found    
 vector   gSitTargetPos = <0.0,0.0,0.01>; // never ZERO_VECTOR, which clears
 rotation gSitTargetRot = ZERO_ROTATION;
 

@@ -1,4 +1,5 @@
 * Test AnimAdjustmentFinder adjustments in MultiPose as 'animations'
+* MultiPose HOWTO
 * Update SitTargetReporter to use new calculations, test
 * Update RemotePose with new calculations, test
 * Test creation of 'animations' notecard, document process
