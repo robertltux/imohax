@@ -1,5 +1,4 @@
 // $Id: RemotePose.lsl 7 2008-12-22 17:58:28Z imohax $
-
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.
@@ -32,12 +31,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+// This script is not designed to be used in things that move, use OnePose or
+// any script that does not use llDetectedObject() for positioning if moving.
+
 key     gCurrentQuery;
 integer gCurrentQueryLine;
 
-// overriden by SITTARGET line in animations notecard if found    
+// overriden by SITTARGET line in animations notecard if found
 vector   gSitTargetPos = <0.0,0.0,0.01>; // never ZERO_VECTOR, which clears
-rotation gSitTargetRot = ZERO_ROTATION;
+rotation gSitTargetRot = <0.0,0.0,0.0,1.0>;
+
+// home avatar position captured on sit, adjustments added to this
+vector   gHomeLocalPos;
+rotation gHomeLocalRot;
 
 // hash table of animation data
 list gAnimNames;
@@ -47,7 +53,8 @@ list gAnimAliases;
 list gAnimDurations;
 
 integer gNumOfAnims;
-integer gCurrentAnim = 0;
+integer gCurrentAnim = 1;
+string gLastAnimName = "sit";
 
 // current animation placeholders
 string    gAnimName;
@@ -57,53 +64,9 @@ string    gAnimAlias;
 string    gAnimDuration;
 
 key      gAvatar;
-integer  gAvatarLink;
-string   gAvatarName;
-vector   gAvatarPos;
-rotation gAvatarRot;
-vector   gAvatarLocalPos;
-rotation gAvatarLocalRot;
-vector   gAvatarVelocity;
 
 string gStartText = "Starting up. Please wait for 'Ready' before using.";
 string gAnimCard = "animations";
-
-////////////////////////////////////////////////////////////////////////////
-
-playNext()
-{
-    integer next = gCurrentAnim+1;
-    if (next <= gNumOfAnims) play(next);
-    else play(1);
-}
-
-playPrev()
-{
-    integer prev = gCurrentAnim-1;
-    if (prev >= 1) play(prev);
-    else play(gNumOfAnims);
-}
-
-play(integer _index)
-{
-    if (gAnimName != "") llStopAnimation(gAnimName);
-
-    gCurrentAnim  = _index;
-    gAnimName     = llList2String(gAnimNames,_index);
-    gAnimPosAdj   = llList2Vector(gAnimPosAdjustments,_index);
-    gAnimRotAdj   = llList2Rot(gAnimRotAdjustments,_index);
-    gAnimAlias    = llList2String(gAnimAliases,_index);
-    gAnimDuration = llList2String(gAnimDurations,_index);
-
-    vector   pos = gAvatarLocalPos + (gAnimPosAdj * gAvatarLocalRot);
-    rotation rot = gAvatarLocalRot * gAnimRotAdj;
-
-    llSetLinkPrimitiveParams(gAvatarLink,[
-        PRIM_POSITION,pos,
-        PRIM_ROTATION,rot]);
-
-    llStartAnimation(gAnimName);
-}
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -140,6 +103,8 @@ state reading_animations_notecard
 
         gCurrentQuery = llGetNotecardLine(gAnimCard,gCurrentQueryLine);
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     dataserver(key _query, string _data)
     {
@@ -201,44 +166,76 @@ state waiting_for_avatar
 {
     state_entry()
     {
-        gAvatar         = NULL_KEY;
-        gAvatarLink     = 0;
-        gAvatarName     = "";
-        gAvatarPos      = ZERO_VECTOR;
-        gAvatarRot      = ZERO_ROTATION;
-        gAvatarLocalPos = ZERO_VECTOR;
-        gAvatarLocalRot = ZERO_ROTATION;
-        gAvatarVelocity = ZERO_VECTOR;
-
+        gAvatar = NULL_KEY;
+        gLastAnimName = "sit";
+        gHomeLocalPos = ZERO_VECTOR;
+        gHomeLocalRot = ZERO_ROTATION;
         llSitTarget(gSitTargetPos, gSitTargetRot);
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     changed(integer _change)
     {
         if (_change & CHANGED_LINK)
         {
             llSleep(0.1); // let's av get to sit target
-            key _avatar = llAvatarOnSitTarget();
-            if (_avatar != NULL_KEY)
+            gAvatar = llAvatarOnSitTarget();
+            if (gAvatar != NULL_KEY)
             {
-                list details = llGetObjectDetails(_avatar,[
-                    OBJECT_NAME, OBJECT_POS, OBJECT_ROT, OBJECT_VELOCITY]);
+                vector   rootPos = llGetRootPosition();
+                rotation rootRot = llGetRootRotation();
 
-                vector   posRoot = llGetRootPosition();
-                rotation rotRoot = llGetRootRotation();
+                // capture the home pos and rot to which anim adjustments added
+                list av = llGetObjectDetails(gAvatar,[OBJECT_POS,OBJECT_ROT]);
+                gHomeLocalPos = (llList2Vector(av,0)-rootPos)/rootRot;
+                gHomeLocalRot = (llList2Rot(av,1)/rootRot);
 
-                gAvatar         = _avatar;
-                gAvatarLink     = llGetNumberOfPrims();
-                gAvatarName     = llList2String(details,0);
-                gAvatarPos      = llList2Vector(details,1);
-                gAvatarRot      = llList2Rot(details,2);
-                gAvatarVelocity = llList2Vector(details,3);
-                gAvatarLocalPos = (gAvatarPos-posRoot)/rotRoot;
-                gAvatarLocalRot = (gAvatarRot/rotRoot)/rotRoot;
-
-                state animating;
+                state fetching_current_animation;
             }
         }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+state switching_to_next
+{
+    state_entry()
+    {
+        ++gCurrentAnim;
+        if (gCurrentAnim > gNumOfAnims) gCurrentAnim = 1;
+        state fetching_current_animation;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+state switching_to_prev
+{
+    state_entry()
+    {
+        --gCurrentAnim;
+        if (gCurrentAnim < 1) gCurrentAnim = gNumOfAnims;
+        state fetching_current_animation;
+    }
+}
+
+//------------------------------------------------------------------------------
+
+state fetching_current_animation
+{
+    state_entry()
+    {
+        gLastAnimName = gAnimName;
+
+        gAnimName     = llList2String(gAnimNames,gCurrentAnim);
+        gAnimPosAdj   = llList2Vector(gAnimPosAdjustments,gCurrentAnim);
+        gAnimRotAdj   = llList2Rot(gAnimRotAdjustments,gCurrentAnim);
+        gAnimAlias    = llList2String(gAnimAliases,gCurrentAnim);
+        gAnimDuration = llList2String(gAnimDurations,gCurrentAnim);
+
+        state animating;
     }
 }
 
@@ -252,36 +249,60 @@ state animating
             | PERMISSION_TAKE_CONTROLS);
     }
 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     run_time_permissions(integer _perms)
     {
         if (_perms & (PERMISSION_TRIGGER_ANIMATION | PERMISSION_TAKE_CONTROLS))
         {
-            llStopAnimation("sit");
-            if (gCurrentAnim == 0) gCurrentAnim = 1;
-            play(gCurrentAnim);
-            llTakeControls(CONTROL_RIGHT|CONTROL_LEFT, TRUE, FALSE);
+            llTakeControls(CONTROL_UP|CONTROL_DOWN, TRUE, FALSE);
+
+            if (llGetAgentSize(gAvatar)==ZERO_VECTOR) // lost av from sim
+            {
+                llUnSit(gAvatar);
+                state waiting_for_avatar;
+            }
+
+            llStopAnimation("sit"); // creeps in
+            if (gLastAnimName != "") llStopAnimation(gAnimName);
+
+            vector   avPosLocalNew = gHomeLocalPos + gAnimPosAdj;
+            rotation avRotLocalNew =
+                (gHomeLocalRot * gAnimRotAdj) / llGetRootRotation();
+
+            // TODO verify the gAvatarLink with llGetLinkKey() loop
+            integer link = llGetNumberOfPrims();
+
+            llSetLinkPrimitiveParams(link,[
+                PRIM_POSITION,avPosLocalNew,
+                PRIM_ROTATION,avRotLocalNew]);
+
+            llStartAnimation(gAnimName);
         }
     }
 
-    //TODO: change this back to pgup and pgdown for switching for consistency
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     control(key _id, integer _held, integer _change)
     {
-        if (_held & _change & CONTROL_RIGHT) playNext();
-        if (_held & _change & CONTROL_LEFT)  playPrev();
+        if (_held & _change & CONTROL_UP)   state switching_to_next;
+        if (_held & _change & CONTROL_DOWN) state switching_to_prev;
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     changed(integer _change)
     {
         if (_change & CHANGED_LINK)
         {
-            if (llAvatarOnSitTarget() == NULL_KEY) state stopping_animation;
+            if (llAvatarOnSitTarget()==NULL_KEY) state freeing_avatar;
         }
     }
 }
 
 //------------------------------------------------------------------------------
 
-state stopping_animation
+state freeing_avatar
 {
     state_entry()
     {

@@ -49,6 +49,9 @@
 // 10) Stop the saved animation you started from inventory
 // 11) Start the next animation to adjust from inventory
 //        (you may need to stand up and reset to clear animation artifacts)
+//        (if you have loaded the animations/poses into your adjust prim
+//            inventory you can also just say 'play <animname>', this works
+//            for standard anims also)
 // 12) Move the prim like before to make your avatar look correctly placed
 // 13) Repeat steps 8-12 for all animations/poses
 // 14) Say 'show' to copy and paste the chat text into an 'animations' notecard
@@ -117,6 +120,7 @@ rotation gAdjPrimRot = ZERO_ROTATION;
 string gStartingText = "Animation Adjustment Tool\n(have a seat)";
 
 key gAvatar = NULL_KEY;
+string gPlaying;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -324,6 +328,16 @@ go(string _name)
 
 //------------------------------------------------------------------------------
 
+play(string _name)
+{
+    if (_name == "") return;
+    if (gPlaying != "") llStopAnimation(gPlaying);
+    llStartAnimation(_name);
+    gPlaying = _name;
+}
+
+//------------------------------------------------------------------------------
+
 say(string _text)
 {
     llWhisper(0,_text);
@@ -361,6 +375,13 @@ default
             string name = llStringTrim(llGetSubString(_text,2,-1),STRING_TRIM);
             if (name == "go") name = "";
             go(name);
+        }
+        
+        else if (llSubStringIndex(_text, "play") == 0)
+        {
+            string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
+            if (name == "play") name = "";
+            play(name);
         }
         
         else if (_text == "stand")
