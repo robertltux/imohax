@@ -38,79 +38,59 @@
 
 //HOWTO USE: Put this script into your object and change the sit
 //target setting below to match your chosen animation. Use
-//MoSitTargetReporter or another tool help get this. Set animation
-//to name of your animation and put into your objects inventory
-//where this script is. You can also just specify one of the
-//standard animations that do not require an uploaded animation:
+//SitTargetReporter or another tool help get this. Set animation
+//to name of your animation or just put it into your objects inventory
+//where this script is. If you do not put an animation into inventory
+//a standard animation will be assumed and gAnimation will have to be set
+//below. For a list of standard animations go to
 //http://lslwiki.net/lslwiki/wakka.php?wakka=animation although
 //these are not reliable in OpenSim currently.
 
-vector   gSitTargetPos = <0.0,0.0,0.01>; //no ZERO_VECTOR, that clears
-rotation gSitTargetRot = ZERO_ROTATION;
-string   gAnimation    = "sit";
+string   gAnimation = "sit";
 
-////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 key gAvatar;
 
-default{
-    
+default
+{
     state_entry()
     {
         state waiting_for_avatar;
     }
-
-    on_rez(integer _start)
-    {
-        llResetScript();
-    }
 }
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 
 state waiting_for_avatar
 {
     state_entry()
     {
-        gAvatar = NULL_KEY;
+        // SL and OpenSim can forget prim properties, so we always set,
+        // use SitTargetReporter to help get this line, never set
+        // position (first arg) to all zeros since that clears it
 
-        // SL and OpenSim can forget prim properties, so we always set
-        llSitTarget(gSitTargetPos,gSitTargetRot);
+        llSitTarget(<0.0,0.0,0.01>,<0.0,0.0,0.0,1.0>);
     }
 
-    on_rez(integer _start)
-    {
-        llResetScript();
-    }
-
-    changed(integer _change)
+   changed(integer _change)
     {
         if (_change & CHANGED_LINK)
         {
             llSleep(0.1); // let's av get to sit target
-            key avatar = llAvatarOnSitTarget();
-            if (avatar != NULL_KEY)
-            {
-                gAvatar = avatar;
-                state animating;
-
-            }
+            gAvatar = llAvatarOnSitTarget();
+            if (gAvatar != NULL_KEY) state animating;
         }
     }
 }
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 
 state animating
 {
     state_entry()
     {
         llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION);
-    }
-
-    on_rez(integer _start)
-    {
-        llResetScript();
     }
 
     run_time_permissions(integer _perms)
@@ -126,26 +106,20 @@ state animating
     {
         if (_change & CHANGED_LINK)
         {
-            if (llAvatarOnSitTarget()==NULL_KEY)
+            if (llAvatarOnSitTarget() == NULL_KEY)
                 state stopping_animation;
         }
     }
 }
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 
 state stopping_animation
 {
     state_entry()
     {
-        integer perms = llGetPermissions();
-        if (perms & PERMISSION_TRIGGER_ANIMATION)
+        if (llGetPermissions() & PERMISSION_TRIGGER_ANIMATION)
             llStopAnimation(gAnimation);
         state waiting_for_avatar;
-    }
-
-    on_rez(integer _start)
-    {
-        llResetScript();
     }
 }

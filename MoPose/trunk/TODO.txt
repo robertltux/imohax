@@ -1,5 +1,5 @@
+* FINISH HudMultiPose for Yman
 * MultiPose HOWTO
-* Update SitTargetReporter to use new calculations, test
 * Update RemotePose with new calculations, test
 * Test creation of 'animations' notecard, document process
 * Test the sit target and one offset from animations notecard in MoPoseSimple
@@ -11,6 +11,8 @@
 * Comment up LocationHelper
 * Add sensing of language with llGetAgentLanguage()
 * Add a simple RegionRelay for finding sit targets for TP hacks
+
+* Setup tip jar, for those who care :)
 
 //TODO make it reposition based on the animations notecard, but only if needed
 //TODO make it hide the poseball on sit
