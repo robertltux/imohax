@@ -34,6 +34,22 @@
 // This script is not designed to be used in things that move, use OnePose or
 // any script that does not use llDetectedObject() for positioning if moving.
 
+// Same as MultiPose but 'hears' the following commands when avatar sitting:
+//     /1prev, /1next, /1list, /1<name>
+
+//change if you like to avoid cross talk, 0 probably just for testing
+integer channel = 1;  
+
+//change to FALSE if you want to allow anything to send Cmds
+integer gHearAvatarOnly = TRUE; 
+
+string gStartText = "Starting up. Please wait for 'Ready' before using.";
+string gAnimCard = "animations";
+
+//------------------------------------------------------------------------------
+
+integer gListener;
+
 key     gCurrentQuery;
 integer gCurrentQueryLine;
 
@@ -63,10 +79,7 @@ rotation  gAnimRotAdj;
 string    gAnimAlias;
 string    gAnimDuration;
 
-key      gAvatar;
-
-string gStartText = "Starting up. Please wait for 'Ready' before using.";
-string gAnimCard = "animations";
+key gAvatar;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -94,6 +107,7 @@ state reading_animations_notecard
         gCurrentQueryLine = 0;
         gCurrentQuery = NULL_KEY;
 
+        // start with 1 instead of 0
         gAnimNames = [""];
         gAnimPosAdjustments = [""];
         gAnimRotAdjustments = [""];
@@ -118,6 +132,8 @@ state reading_animations_notecard
             string rotAdj   = llStringTrim(llList2String(p,2),STRING_TRIM);
             string alias    = llStringTrim(llList2String(p,3),STRING_TRIM);
             string duration = llStringTrim(llList2String(p,4),STRING_TRIM);
+
+            if (alias == "") alias = name;
 
             if (posAdj == "") posAdj = "<0.0,0.0,0.0>";
             if (rotAdj == "") rotAdj = "<0.0,0.0,0.0,1.0>";
@@ -146,6 +162,26 @@ state reading_animations_notecard
             ++gCurrentQueryLine;
             gCurrentQuery = llGetNotecardLine(gAnimCard,gCurrentQueryLine);
         }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+state listing_animations
+{
+    state_entry()
+    {
+        llSay(channel, "NumOfAnims=" + (string) gNumOfAnims);
+        integer i;
+        for (i=0; i<gNumOfAnims; i++)
+        {
+            string c = (string) (i+1);
+            if (i<10)  c = "0" + c;
+            if (i<100) c = "0" + c;
+             
+            llSay(channel, "Animation" + c + "=" + llList2String(gAnimAliases,i+1));
+        }
+        state animating;
     }
 }
 
@@ -247,6 +283,11 @@ state animating
     {
         llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION
             | PERMISSION_TAKE_CONTROLS);
+
+        if (gHearAvatarOnly==TRUE)
+            gListener = llListen(channel,"",gAvatar,"");
+        else
+            gListener = llListen(channel,"",NULL_KEY,"");
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -285,8 +326,8 @@ state animating
 
     control(key _id, integer _held, integer _change)
     {
-        if (_held & _change & CONTROL_UP)   state switching_to_next;
-        if (_held & _change & CONTROL_DOWN) state switching_to_prev;
+        if      (_held & _change & CONTROL_UP)   state switching_to_next;
+        else if (_held & _change & CONTROL_DOWN) state switching_to_prev;
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -298,6 +339,29 @@ state animating
             if (llAvatarOnSitTarget()==NULL_KEY) state freeing_avatar;
         }
     }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    listen(integer _channel, string _name, key _id, string _message)
+    {
+        if (_message == "") return;
+        
+        integer anim;
+        if      (_message == "next") state switching_to_next;
+        else if (_message == "prev") state switching_to_prev;
+        else if (_message == "list") state listing_animations;
+        else if (anim = llListFindList(gAnimAliases, [_message]) != -1)
+        {
+            gCurrentAnim = anim;
+            state fetching_current_animation;   
+        }
+        else if (anim = llListFindList(gAnimNames, [_message]) != -1)
+        {
+            gCurrentAnim = anim;
+            state fetching_current_animation;
+        }
+    }
+
 }
 
 //------------------------------------------------------------------------------
@@ -310,6 +374,7 @@ state freeing_avatar
         integer perms = llGetPermissions();
         if (perms & PERMISSION_TRIGGER_ANIMATION)
             llStopAnimation(gAnimName);
+        llListenRemove(gListener);
         state waiting_for_avatar;
     }
 }

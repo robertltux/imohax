@@ -119,6 +119,8 @@ state reading_animations_notecard
             string alias    = llStringTrim(llList2String(p,3),STRING_TRIM);
             string duration = llStringTrim(llList2String(p,4),STRING_TRIM);
 
+            if (alias == "") alias = name;
+
             if (posAdj == "") posAdj = "<0.0,0.0,0.0>";
             if (rotAdj == "") rotAdj = "<0.0,0.0,0.0,1.0>";
 
@@ -285,8 +287,8 @@ state animating
 
     control(key _id, integer _held, integer _change)
     {
-        if (_held & _change & CONTROL_UP)   state switching_to_next;
-        if (_held & _change & CONTROL_DOWN) state switching_to_prev;
+        if      (_held & _change & CONTROL_UP)   state switching_to_next;
+        else if (_held & _change & CONTROL_DOWN) state switching_to_prev;
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

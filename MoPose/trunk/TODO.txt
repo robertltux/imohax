@@ -14,6 +14,10 @@
 
 * Setup tip jar, for those who care :)
 
+* check if listeners persist across states, if so, put llListens someplace besides 'animating' state
+
+* think out how to add command channel to "animations" listing to coordinate other listenting attachments or items.
+
 //TODO make it reposition based on the animations notecard, but only if needed
 //TODO make it hide the poseball on sit
 //TODO make animations notecard optional
