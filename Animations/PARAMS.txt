@@ -1,0 +1,75 @@
+# part-body, right-handed signing autograph with left give
+# contributed by Mo Hax
+AutographRight: priority=4 hands=relaxed loop=no
+
+# turn right on bouncy ball, grasping
+# contributed by Mo Hax
+BouncyBallRight: priority=4 hands=fist loop=yes
+
+# turn left on bouncy ball, grasping
+# contributed by Mo Hax
+BouncyBallLeft: priority=4 hands=fist loop=yes
+
+# move foward on bouncy ball, run speed, grasping
+# contributed by Mo Hax
+BouncyBallRun: priority=4 hands=fist loop=yes
+
+# move foward on bouncy ball, walk speed, grasping
+# contributed by Mo Hax
+BouncyBallWalk: priority=4 hands=fist loop=yes
+
+# super bounce on bouncy ball, matrix-like, grasping
+# contributed by Mo Hax
+BouncyBallSuper: priority=4 hands=fist loop=yes
+
+# hip-hop arm and shoulder wave, right to left
+# contributed by Mo Hax
+HipHopWave: priority=4 hands=relaxed loop=no
+
+# same as handshake, but gives something with left hand first (30x30fps)
+# contributed by Mo Hax
+GiveHandshake: priority=4 hands=relaxed loop=no
+
+# same as give_and_handshake, but uses two hands to give
+# contributed by Mo Hax
+Give2Handshake: priority=4 hands=relaxed loop=no
+
+# a simple right-handed, double-pump handshake, (30x30fps)
+# contributed by Mo Hax
+Handshake: priority=4 expression=smile hands=relaxed loop=no
+
+# partial body part animation, hands on knees, log sitting
+# contributed by Mo Hax
+LogSit: priority=4 hands=relaxed loop=yes
+
+# low-priority, part-body stand for use with other anims
+# contributed by Mo Hax
+PlaceMarker: priority=2 hands=relaxed loop=yes
+
+# high-priority, full-body, holding snowglobe, gazing into
+# contributed by Mo Hax for PatriciaAnne Daviau
+SnowGlobeStare: priority=4 hands=relaxed loop=yes face=smile
+
+# the standard tpose (all must start with this in frame 1)
+# contributed by Mo Hax
+TPose: priority=4 hands=relaxed loop=yes
+
+# a tpose more suitable for posing stands
+# contributed contributed by Mo Hax
+TPose2: priority=4 hands=relaxed loop=yes
+
+# basic wave goodbye/hello with right arm, generic
+# contributed by Mo Hax
+WaveRightArm: priority=4 hands=relaxed loop=no
+
+# a cute/feminine wave with shrugged shoulders
+# contributed by Mo Hax
+WaveRightCute: priority=4 hands=relaxed loop=no
+
+# better version of native Wave used in 'hey' gesture
+# contributed by Mo Hax
+WaveRightArmHey: priority=4 hands=relaxed loop=no
+
+# static, full body, pose of windsurfer, left foot forward
+# contributed by contributed by Mo Hax
+WindsurfLeft: priority=4 hands=fist loop=yes
