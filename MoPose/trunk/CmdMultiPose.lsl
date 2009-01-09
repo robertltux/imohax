@@ -38,7 +38,7 @@
 //     /1prev, /1next, /1list, /1<name>
 
 //change if you like to avoid cross talk, 0 probably just for testing
-integer channel = 1;  
+integer gChannel = 1;  
 
 //change to FALSE if you want to allow anything to send Cmds
 integer gHearAvatarOnly = TRUE; 
@@ -171,7 +171,7 @@ state listing_animations
 {
     state_entry()
     {
-        llSay(channel, "NumOfAnims=" + (string) gNumOfAnims);
+        llSay(gChannel, "NumOfAnims=" + (string) gNumOfAnims);
         integer i;
         for (i=0; i<gNumOfAnims; i++)
         {
@@ -179,7 +179,7 @@ state listing_animations
             if (i<10)  c = "0" + c;
             if (i<100) c = "0" + c;
              
-            llSay(channel, "Animation" + c + "=" + llList2String(gAnimAliases,i+1));
+            llSay(gChannel, "Animation" + c + "=" + llList2String(gAnimAliases,i+1));
         }
         state animating;
     }
@@ -285,9 +285,9 @@ state animating
             | PERMISSION_TAKE_CONTROLS);
 
         if (gHearAvatarOnly==TRUE)
-            gListener = llListen(channel,"",gAvatar,"");
+            gListener = llListen(gChannel,"",gAvatar,"");
         else
-            gListener = llListen(channel,"",NULL_KEY,"");
+            gListener = llListen(gChannel,"",NULL_KEY,"");
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
