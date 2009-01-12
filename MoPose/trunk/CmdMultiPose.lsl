@@ -37,8 +37,8 @@
 // Same as MultiPose but 'hears' the following commands when avatar sitting:
 //     /1prev, /1next, /1list, /1<name>
 
-//change if you like to avoid cross talk, 0 probably just for testing
-integer gChannel = 1;  
+//change if you like to avoid cross talk, but probably not 0 (unless testing)
+integer channel = 1;  
 
 //change to FALSE if you want to allow anything to send Cmds
 integer gHearAvatarOnly = TRUE; 
@@ -171,16 +171,14 @@ state listing_animations
 {
     state_entry()
     {
-        llSay(gChannel, "NumOfAnims=" + (string) gNumOfAnims);
         integer i;
+        list buffer;
         for (i=0; i<gNumOfAnims; i++)
         {
-            string c = (string) (i+1);
-            if (i<10)  c = "0" + c;
-            if (i<100) c = "0" + c;
-             
-            llSay(gChannel, "Animation" + c + "=" + llList2String(gAnimAliases,i+1));
+            string c = (string) (i+1);     
+            buffer += c + "=" + llList2String(gAnimAliases,i+1);
         }
+        llSay(channel,llList2CSV(buffer));
         state animating;
     }
 }
@@ -283,11 +281,11 @@ state animating
     {
         llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION
             | PERMISSION_TAKE_CONTROLS);
-
+        
         if (gHearAvatarOnly==TRUE)
-            gListener = llListen(gChannel,"",gAvatar,"");
+            gListener = llListen(channel,"",gAvatar,"");
         else
-            gListener = llListen(gChannel,"",NULL_KEY,"");
+            gListener = llListen(channel,"",NULL_KEY,"");
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -345,20 +343,24 @@ state animating
     listen(integer _channel, string _name, key _id, string _message)
     {
         if (_message == "") return;
-        
+
         integer anim;
         if      (_message == "next") state switching_to_next;
         else if (_message == "prev") state switching_to_prev;
         else if (_message == "list") state listing_animations;
-        else if (anim = llListFindList(gAnimAliases, [_message]) != -1)
+        else if (llSubStringIndex(_message,"#")==0)
         {
+            gCurrentAnim = (integer) llGetSubString(_message,1,-1);
+            state fetching_current_animation;
+        }
+        else
+        {
+            integer anim = llListFindList(gAnimAliases, [_message]);
+            if (anim == -1)
+                anim = llListFindList(gAnimNames,[_message]);
+            if (anim == -1) return;   
             gCurrentAnim = anim;
             state fetching_current_animation;   
-        }
-        else if (anim = llListFindList(gAnimNames, [_message]) != -1)
-        {
-            gCurrentAnim = anim;
-            state fetching_current_animation;
         }
     }
 
