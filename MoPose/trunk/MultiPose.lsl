@@ -34,6 +34,16 @@
 // This script is not designed to be used in things that move, use OnePose or
 // any script that does not use llDetectedObject() for positioning if moving.
 
+// change these depending on language
+string START_TEXT = "Starting up. Please wait for 'Ready' before using.";
+string READY_TEXT = "Ready.";
+string ERROR_TEXT = "ERROR STATE. Correct and reset script.";
+
+// might change this based on language also
+string gAnimCard = "animations";
+
+//------------------------------------------------------------------------------
+
 key     gCurrentQuery;
 integer gCurrentQueryLine;
 
@@ -65,16 +75,13 @@ string    gAnimDuration;
 
 key      gAvatar;
 
-string gStartText = "Starting up. Please wait for 'Ready' before using.";
-string gAnimCard = "animations";
-
 ////////////////////////////////////////////////////////////////////////////
 
 default
 {
     state_entry()
     {
-        llOwnerSay(gStartText);
+        llOwnerSay(START_TEXT);
         state reading_animations_notecard;
     }
 }
@@ -157,7 +164,7 @@ state ready
 {
     state_entry()
     {
-        llOwnerSay("Ready");
+        llOwnerSay(READY_TEXT);
         state waiting_for_avatar;
     }
 }
@@ -322,6 +329,6 @@ state error
 {
     state_entry()
     {
-        llOwnerSay("ERROR STATE. Correct and reset script.");
+        llOwnerSay(ERROR_TEXT);
     }
 }

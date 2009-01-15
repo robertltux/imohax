@@ -1,4 +1,10 @@
 * FINISH HudMultiPose for Yman
+* Add sensing inventory change to force reload of animations in MultiPose
+* Add optional 'say current' to multipose
+* Dividers in AnimAdjustmentFinder
+* Add "do" = play + go to AnimAdjustment Finder
+* Add "next" and "prev" to AnimAdjustment Finder
+* Correct instructions in AnimAdjustmentFinder
 * MultiPose HOWTO
 * Update RemotePose with new calculations, test
 * Test creation of 'animations' notecard, document process

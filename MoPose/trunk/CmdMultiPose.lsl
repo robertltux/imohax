@@ -34,16 +34,27 @@
 // This script is not designed to be used in things that move, use OnePose or
 // any script that does not use llDetectedObject() for positioning if moving.
 
+// TODO: flesh out all the MultiPose variants into one with switches here:
+integer ACCEPT_REMOTE_COMMANDS = TRUE;
+
 // Same as MultiPose but 'hears' the following commands when avatar sitting:
 //     /1prev, /1next, /1list, /1<name>
 
-//change if you like to avoid cross talk, but probably not 0 (unless testing)
-integer channel = 1;  
+// set to a channel from 1 to 2147483647, only used when listener needed
+// (can also set to negative if using with Menu and/or HUD remote)
+// (avoid setting to 0 to reduce lag, if you need to for debugging)
+integer gChannel = 1;
 
-//change to FALSE if you want to allow anything to send Cmds
-integer gHearAvatarOnly = TRUE; 
+// change these depending on language
+string START_TEXT = "Starting up. Please wait for 'Ready' before using.";
+string READY_TEXT = "Ready.";
+string ERROR_TEXT = "ERROR STATE. Correct and reset script.";
 
-string gStartText = "Starting up. Please wait for 'Ready' before using.";
+string  HOVER_TEXT  = "";
+vector  HOVER_COLOR = <1.0,0.0,0.0>;
+float   HOVER_TRANS = 1.0;
+
+// might change this based on language also
 string gAnimCard = "animations";
 
 //------------------------------------------------------------------------------
@@ -87,7 +98,7 @@ default
 {
     state_entry()
     {
-        llOwnerSay(gStartText);
+        llOwnerSay(START_TEXT);
         state reading_animations_notecard;
     }
 }
@@ -172,13 +183,13 @@ state listing_animations
     state_entry()
     {
         integer i;
-        list buffer;
+        list buffer = ["ANIMATIONS"];
         for (i=0; i<gNumOfAnims; i++)
         {
             string c = (string) (i+1);     
             buffer += c + "=" + llList2String(gAnimAliases,i+1);
         }
-        llSay(channel,llList2CSV(buffer));
+        llSay(gChannel,llList2CSV(buffer));
         state animating;
     }
 }
@@ -189,7 +200,7 @@ state ready
 {
     state_entry()
     {
-        llOwnerSay("Ready");
+        llOwnerSay(READY_TEXT);
         state waiting_for_avatar;
     }
 }
@@ -205,6 +216,7 @@ state waiting_for_avatar
         gHomeLocalPos = ZERO_VECTOR;
         gHomeLocalRot = ZERO_ROTATION;
         llSitTarget(gSitTargetPos, gSitTargetRot);
+        llSetText(HOVER_TEXT, HOVER_COLOR, HOVER_TRANS);
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -281,11 +293,8 @@ state animating
     {
         llRequestPermissions(gAvatar, PERMISSION_TRIGGER_ANIMATION
             | PERMISSION_TAKE_CONTROLS);
-        
-        if (gHearAvatarOnly==TRUE)
-            gListener = llListen(channel,"",gAvatar,"");
-        else
-            gListener = llListen(channel,"",NULL_KEY,"");
+        if (ACCEPT_REMOTE_COMMANDS == TRUE)
+            gListener = llListen(gChannel,"",NULL_KEY,"");
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -344,7 +353,6 @@ state animating
     {
         if (_message == "") return;
 
-        integer anim;
         if      (_message == "next") state switching_to_next;
         else if (_message == "prev") state switching_to_prev;
         else if (_message == "list") state listing_animations;
@@ -387,6 +395,6 @@ state error
 {
     state_entry()
     {
-        llOwnerSay("ERROR STATE. Correct and reset script.");
+        llOwnerSay(ERROR_TEXT);
     }
 }
