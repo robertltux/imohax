@@ -12,18 +12,20 @@
 
 vector   TARGET_POS  = <0.0,0.0,0.01>;
 rotation TARGET_ROT  = <0.0,0.0,0.0,1.0>;
+float    START_TRANS = 1.0;
 string   HOVER_TEXT  = "";
 vector   HOVER_COLOR = <1.0,0.0,0.0>;
 float    HOVER_TRANS = 1.0;
 integer  COMMANDS    = TRUE;
-integer  SAY_NAMES   = TRUE;
+integer  SAY_NAMES   = FALSE;
+integer  HIDE        = TRUE;
 integer  CHANNEL     = 1;
 string   START_TEXT  = "Starting up. Please wait for 'Ready' before using.";
 string   READY_TEXT  = "Ready.";
 string   ANIMS_TEXT  = " animations: ";
 string   ANIMS_CARD  = "animations";
 
-// End of configuration section. 
+// End of configuration section.
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////   Danger LSL ahead, scripters only. ;) ////////////////////
@@ -51,7 +53,7 @@ key      gAvatar;
 
 ////////////////////////////////////////////////////////////////////////////
 
-show()
+tell()
 {
     integer i;
     list buffer = ["ANIMATIONS"];
@@ -121,6 +123,23 @@ play(integer _anim)
     llStartAnimation(gAnimName);
     if (SAY_NAMES) llWhisper(0,gAnimName);
 
+}
+
+//------------------------------------------------------------------------------
+
+show()
+{
+    llSetAlpha(START_TRANS, ALL_SIDES);
+    llSetText(HOVER_TEXT,HOVER_COLOR,HOVER_TRANS);
+}
+
+//------------------------------------------------------------------------------
+
+hide()
+{
+    if (!HIDE) return;
+    llSetAlpha(0.0, ALL_SIDES);
+    llSetText("",ZERO_VECTOR,0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -197,7 +216,7 @@ state reading_animations_notecard{
             string duration = llStringTrim(llList2String(p,4),STRING_TRIM);
 
             if (alias == "") alias = name;
-            
+
             if (posAdj == "") posAdj = "<0.0,0.0,0.0>";
             if (rotAdj == "") rotAdj = "<0.0,0.0,0.0,1.0>";
 
@@ -251,7 +270,7 @@ state ready
         gLastAnimName = "sit";
         gHomeLocalPos = ZERO_VECTOR;
         gHomeLocalRot = ZERO_ROTATION;
-        
+
         llSitTarget(TARGET_POS, TARGET_ROT);
         llSetText(HOVER_TEXT, HOVER_COLOR, HOVER_TRANS);
         llWhisper(0,READY_TEXT);
@@ -287,6 +306,7 @@ state ready
                     && (llGetAgentSize(gAvatar)!=ZERO_VECTOR))
                         llStopAnimation(gAnimName);
                 llListenRemove(gListener);
+                show();
             }
         }
     }
@@ -299,7 +319,8 @@ state ready
         {
             llTakeControls(CONTROL_UP|CONTROL_DOWN, TRUE, FALSE);
             llStopAnimation("sit");
-            llSleep(0.3); // lets sit stop
+            hide();
+            play(gCurrentAnim);
         }
     }
 
@@ -319,7 +340,7 @@ state ready
 
         if      (_message == "next") next();
         else if (_message == "prev") prev();
-        else if (_message == "list") show();
+        else if (_message == "tell") tell();
         else if (llSubStringIndex(_message,"#")==0)
         {
             play((integer) llGetSubString(_message,1,-1));
