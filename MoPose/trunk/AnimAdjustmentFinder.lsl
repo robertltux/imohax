@@ -133,7 +133,7 @@ updateCurrent()
     gPrimPos = llGetRootPosition();
     gPrimRot = llGetRootRotation();
 
-    gAdjPos = (gAvatarPos-gHomePos)/gHomeRot;
+    gAdjPos = (gAvatarPos-gHomePos)/gHomeRot + <0.0,0.0,0.365>; // target err
     gAdjRot = gAvatarRot/gHomeRot;
 
     gAdjPrimPos = (gPrimPos-gHomePrimPos)/gHomePrimRot;
@@ -334,6 +334,20 @@ play(string _name)
     if (gPlaying != "") llStopAnimation(gPlaying);
     llStartAnimation(_name);
     gPlaying = _name;
+    gAdjName = _name;
+}
+
+//-----------------------------------------------------------------------------
+
+next()
+{
+    
+}
+
+//------------------------------------------------------------------------------
+
+prev()
+{
 }
 
 //------------------------------------------------------------------------------
