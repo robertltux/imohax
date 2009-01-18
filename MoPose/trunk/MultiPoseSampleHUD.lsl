@@ -41,7 +41,7 @@ string gBaseAnimation = "#1";
 float gTimeOut = 10.0;
 
 // only change if have changed in item (say, for different language)
-string LIST_CMD = "list";
+string LIST_CMD = "tell";
 
 // could change for different language, etc.
 string TIMEOUT_TEXT = "Request for animations list timed out.";

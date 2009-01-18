@@ -129,6 +129,7 @@ play(integer _anim)
 
 show()
 {
+    if (!HIDE) return;
     llSetAlpha(START_TRANS, ALL_SIDES);
     llSetText(HOVER_TEXT,HOVER_COLOR,HOVER_TRANS);
 }
@@ -149,6 +150,8 @@ default
     state_entry()
     {
         llWhisper(0,START_TEXT);
+        
+        show();
 
         gCurrentAnim        = 1;
         gLastAnimName       = "sit";
