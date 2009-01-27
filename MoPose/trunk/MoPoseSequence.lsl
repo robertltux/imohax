@@ -1,6 +1,9 @@
+// JUST A PLACEHOLDER FOR NOW, SNAPSHOT OF MULTIPOSE, NEEDS COMPLETION
+
+
 ////////////////////////////////////////////////////////////////////////////
 //
-// $Id$
+// $Id: MultiPose.lsl 28 2009-01-18 02:45:51Z imohax $
 // [Copyright and BSD (free) license included at bottom.]
 //
 // Go to http://imohax.com/mopose for help, FAQ, video HOWTOs, and comments
@@ -30,6 +33,9 @@ string   ANIMS_CARD  = "animations";
 ////////////////////////////////////////////////////////////////////////////
 ////////////////   Danger LSL ahead, scripters only. ;) ////////////////////
 ////////////////////////////////////////////////////////////////////////////
+
+//TODO GUT THIS WHERE NEEDED AND PLAY SEQUENCE
+
 
 integer  gListener;
 key      gCurrentQuery;

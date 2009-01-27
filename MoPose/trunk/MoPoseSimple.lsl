@@ -1,4 +1,4 @@
-// $Id$
+// $Id: Pose.lsl 17 2009-01-01 17:47:00Z imohax $
 //
 // Copyright (c) 2008, Mo Hax
 // All rights reserved.
