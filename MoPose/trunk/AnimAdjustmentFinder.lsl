@@ -15,8 +15,29 @@ rotation TARGET_ROT = ZERO_ROTATION;
 string   ANIMS_CARD = "animations";
 string   START_TEXT = "Animation Adjustment Tool\n(have a seat)";
 string   ADDED_TEXT = "Added animation ";
+string   GOTIT_TEXT = "Have already. Skipping ";
 string   HOME_TEXT  = "Home not yet set.";
 string   PLAY_TEXT  = "Playing ";
+string   HAVE_HELP  = "Say 'help' for list of commands.";
+string   HELP_TEXT  = "
+Version: $Id$
+help - Say this help to public chat
+add - Rescans inventory for animations and adds them to list
+add <NAME> - Scans the directory for anim NAME and adds it to list
+save home - Sets current as home position
+save or s - Saves current adjustment for current anim playing
+save <NAME> - Forces save of current adjustment as anim NAME
+play <NAME> - Repositions for and plays anim NAME
+play next - Repositions for and plays next animation
+next or n - Same as 'play next'
+play prev - Repositions for and plays previous animation
+prev or p - Same as 'play prev'
+go <NAME> - Repositions for anim NAME, but does not play it
+go home - Repositions to last saved home position
+tell or t - Lists all adjustments for cutting and pasting
+stand - Just unsit the sitting avatar
+";
+    
 
 // End of configuration section
 
@@ -199,9 +220,6 @@ updateHome()
     gAdjPrimPoss = [];
     gAdjPrimRots = [];
 
-    // just clear all saved adjustments since recalculating all from new home
-    // would require calculations involving buggy sit target
-
     add("");
 }
 
@@ -334,6 +352,8 @@ _add(string _name)
         gAdjPrimRots += ZERO_ROTATION;
         say(ADDED_TEXT + "'" + _name + "'");
     }
+    else
+        say (GOTIT_TEXT + "'" + _name + "'");
 }
 
 //------------------------------------------------------------------------------
@@ -354,14 +374,6 @@ add(string _name)
     {
         _add(_name);
     }
-}
-
-//------------------------------------------------------------------------------
-
-load()
-{
-    //TODO load an existing animations notecard, delete the sit target err,
-    //     and update adjustment storage array
 }
 
 //------------------------------------------------------------------------------
@@ -426,6 +438,11 @@ default
             add(name);
         }
 
+        else if (_text == "help")
+        {
+            say(HELP_TEXT);
+        }
+
         else if (_text == "stand")
         {
             if (gAvatar!=NULL_KEY) llUnSit(gAvatar);
@@ -447,6 +464,7 @@ default
                 llSetText("",ZERO_VECTOR,1.0);
                 if (gHomePos == ZERO_VECTOR) updateHome();
                 string first = llList2String(gAdjNames,0);
+                say(HAVE_HELP);
                 if (first != "") _play(first);
             }
             else
