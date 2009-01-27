@@ -41,6 +41,13 @@ A. Here is the overall process. Commands are described in more detail later:
 	12. Link poseball (if not standalone poseball)
 	13. Sit on linked poseball to test, pgup/pgdown to cycle through
 	------------------------------------------------------------------------------
+
 Q. How do I adjust multiple animations for items without a poseball?
 
 A. Same process as with poseball but when complete transfer the contents of the poseball to the sit prim in your item. Adjust your sit target accordingly, all adjustments will be relative to avatar appearance from that sit target.
+
+------------------------------------------------------------------------------
+
+Q. Why does AnimAdjustmentFinder time out with "AnimAdjustmentFinder has timed out. Turning script off."?
+
+A. This is a safety precaution, which can be reversed simply by checking the Running check box in the script editor, is to prevent content creators from accidentally leaving a running AnimAdjustmentFinder script in their creation. Releasing a product, for example, without this safety would cause horrible problems for those using it since the command listener on public chat (channel 0) would not only create unnecessary lag, but potentially get in the way of normal public chat.

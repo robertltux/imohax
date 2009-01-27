@@ -10,15 +10,20 @@
 
 // Customize your configuration in this section.
 
-vector   TARGET_POS = <0.0,0.0,0.01>;
-rotation TARGET_ROT = ZERO_ROTATION;
-string   ANIMS_CARD = "animations";
+vector   TARGET_POS  = <0.0,0.0,0.01>;
+rotation TARGET_ROT  = ZERO_ROTATION;
+string   ANIMS_CARD  = "animations";
+float    TIME_OUT    = 300.0; // after no command execute, stops script
+string   SCRIPT_NAME = "AnimAdjustmentFinder";
+
 string   START_TEXT = "Animation Adjustment Tool\n(have a seat)";
 string   ADDED_TEXT = "Added animation ";
 string   GOTIT_TEXT = "Have already. Skipping ";
 string   HOME_TEXT  = "Home not yet set.";
 string   PLAY_TEXT  = "Playing ";
 string   HAVE_HELP  = "Say 'help' for list of commands.";
+string   TIME_TEXT  = "AnimAdjustmentFinder has timed out. Turning script off.";
+
 string   HELP_TEXT  = "
 Version: $Id$
 help - Say this help to public chat
@@ -37,7 +42,6 @@ go home - Repositions to last saved home position
 tell or t - Lists all adjustments for cutting and pasting
 stand - Just unsit the sitting avatar
 ";
-    
 
 // End of configuration section
 
@@ -397,24 +401,35 @@ default
         {
             string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
             if (name == "tell") name = "";
+            llSetTimerEvent(TIME_OUT);
             tell(name);
         }
 
-        else if (_text == "t") tell("");
+        else if (_text == "t")
+        {
+            llSetTimerEvent(TIME_OUT);
+            tell("");
+        }
 
         else if (llSubStringIndex(_text, "save") == 0)
         {
             string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
             if (name == "save") name = "";
+            llSetTimerEvent(TIME_OUT);
             save(name);
         }
 
-        else if (_text == "s") save("");
+        else if (_text == "s")
+        {
+            llSetTimerEvent(TIME_OUT);
+            save("");
+        }
 
         else if (llSubStringIndex(_text, "go") == 0)
         {
             string name = llStringTrim(llGetSubString(_text,2,-1),STRING_TRIM);
             if (name == "go") name = "";
+            llSetTimerEvent(TIME_OUT);
             go(name);
         }
 
@@ -422,26 +437,39 @@ default
         {
             string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
             if (name == "play") name = "";
+            llSetTimerEvent(TIME_OUT);
             play(name);
         }
 
-        else if (_text == "next" || _text == "n") play("next");
-        else if (_text == "prev" || _text == "p") play("prev");
+        else if (_text == "next" || _text == "n")
+        {
+            llSetTimerEvent(TIME_OUT);
+            play("next");
+        }
+
+        else if (_text == "prev" || _text == "p")
+        {
+            llSetTimerEvent(TIME_OUT);
+            play("prev");
+        }
 
         else if (llSubStringIndex(_text,"add")==0)
         {
             string name = llStringTrim(llGetSubString(_text,3,-1),STRING_TRIM);
             if (name == "add") name = "";
+            llSetTimerEvent(TIME_OUT);
             add(name);
         }
 
         else if (_text == "help")
         {
+            llSetTimerEvent(TIME_OUT);
             say(HELP_TEXT);
         }
 
         else if (_text == "stand")
         {
+            llSetTimerEvent(TIME_OUT);
             if (gAvatar!=NULL_KEY) llUnSit(gAvatar);
         }
 
@@ -470,6 +498,12 @@ default
                 gAvatar = NULL_KEY;
             }
         }
+    }
+
+    timer()
+    {
+        say(TIME_TEXT);
+        llSetScriptState(SCRIPT_NAME,FALSE);
     }
 
 }
