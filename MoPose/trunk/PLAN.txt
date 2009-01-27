@@ -5,13 +5,10 @@ Mission:
   maximizing OpenSim compatibility and efficiency
 
 Milestones:
-* Complete a sit tool, adjustment tool, and multipose script by Christmas
-* Complete remote trapeze with 50 animations to work by Jan 2, 2009
 * Alpha release MoPose 5.0 by Jan 15th
 
 Design Objectives:
-* Safegaurd state against reset, persist state
-* Eliminate need to create any configuration by hand
+* Safegaurd state against reset, persist state, opensim compat
 * No unnecessary features per script, minimize logical paths through scripts
 * Minimize functions, maximize states, scripts share and override states
 * Maximize sustainability, eliminate obfuscation
