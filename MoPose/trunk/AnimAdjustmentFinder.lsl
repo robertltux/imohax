@@ -1,89 +1,28 @@
+////////////////////////////////////////////////////////////////////////////
+//
 // $Id$
+// [Copyright and BSD (free) license included at bottom.]
 //
-// Copyright (c) 2008, Mo Hax
-// All rights reserved.
+// Go to http://imohax.com/mopose for help, FAQ, video HOWTOs, and comments
+//       ^^^^^^^^^^^^^^^^^^^^^^^^
 //
-// Simplified BSD License granted to all:
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright notice,
-//         this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//         notice, this list of conditions and the following disclaimer in the
-//         documentation and/or other materials provided with the distribution.
-//     * Neither the name of Mo Hax nor the names of its contributors may be
-//         used to endorse or promote products derived from this software
-//         without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
-// HOWTO: Put this script into a prim, activate, sit, move prim around, save:
-// 1) Create a prim (sphere works), don't link it yet to your final creation
-// 2) Put this script into the contents of your new prim
-// 3) Wait for Ready, then sit on the prim with this script in it
-// 4) Find your animations to get adjustments for in inventory
-// 5) Start your first animation/pose by double-clicking it from inventory
-// 6) Move the prim you are sitting on so your animated/posing avatar is good
-// 7) Say 'set home' to save home position and rotation and clear prev adjusts
-//        ('go home' always returns prim back home (with you sitting on it))
-//        ('show home' displays values)
-// 8) Say 'save <myanim>' replacing <myanim> with your playing anim name
-//        (you can 'save' again to update it anytime until next 'save <myanim>')
-//        ('go <myanim>' moves you to that saved position and rotation)
-// 9) Say 'show' or 'show <myanim>' or 'show last' to confirm save
-//        ('show <myanim>' diplays values, 'show' displays all saved)
-// 10) Stop the saved animation you started from inventory
-// 11) Start the next animation to adjust from inventory
-//        (you may need to stand up and reset to clear animation artifacts)
-//        (if you have loaded the animations/poses into your adjust prim
-//            inventory you can also just say 'play <animname>', this works
-//            for standard anims also)
-// 12) Move the prim like before to make your avatar look correctly placed
-// 13) Repeat steps 8-12 for all animations/poses
-// 14) Say 'show' to copy and paste the chat text into an 'animations' notecard
-// 15) If more than 10 animations cleanup the extra chat from notecard
-//
-// At this point you can either
-//     1) link the adjust prim into your object as the sit prim
-//     2) use some prim from your object as the sit prim
-//
-// If you choose (1):
-//     1) Say 'go home' to position the adjust prim at home
-//     2) Stand up ('stand' command helps)
-//     3) Link in your adjust prim, it can be root or child, no matter
-//     4) Remove or deactivate this script in the new sit prim (former adjust)
-//     5) For animations that require it, place copies in new sit prim contents
-//     6) Copy your 'animations' notecard into the new sit prim (not root)
-//     7) Copy in pose script with 'animations' notecard (MultiPose, etc)
-//     8) Cut and paste the sit target from this script into pose script
-//
-// If you choose (2):
-//     Do everything for (1), but place everything into your sit prim.
-//     Take care to set sit target specific to your sit prim. It will NOT
-//     be the same as that from this script. Use SitTargetReporter to help.
-//     The 'home' position will be at your sit prim's sit target.
- 
-// completely ignored in calculations, set whatever is easiest to sit and move,
-// pick a good one if linking in this prim as final sit prim
-vector   gLocalSitTargetPos = <0.0,0.0,0.01>;
-rotation gLocalSitTargetRot = ZERO_ROTATION;
+// Customize your configuration in this section.
 
-// name of persistent (cache) notecard, will preload on reset or 'set home'
-string gCardName = "animations"; // adjustments, offsets, whatever
+vector   TARGET_POS = <0.0,0.0,0.01>;
+rotation TARGET_ROT = ZERO_ROTATION;
+string   ANIMS_CARD = "animations";
+string   START_TEXT = "Animation Adjustment Tool\n(have a seat)";
+string   ADDED_TEXT = "Added animation ";
+string   HOME_TEXT  = "Home not yet set.";
+string   PLAY_TEXT  = "Playing ";
+
+// End of configuration section
+
+////////////////////////////////////////////////////////////////////////////
+////////////////   Danger LSL ahead, scripters only. ;) ////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 // 'set home' stores regional position and rotation of avatar
 vector   gHomePos         = ZERO_VECTOR;
@@ -117,8 +56,6 @@ rotation gAdjRot     = ZERO_ROTATION;
 vector   gAdjPrimPos = ZERO_VECTOR;
 rotation gAdjPrimRot = ZERO_ROTATION;
 
-string gStartingText = "Animation Adjustment Tool\n(have a seat)";
-
 key gAvatar = NULL_KEY;
 string gPlaying;
 
@@ -146,7 +83,7 @@ save(string _name)
 {
     if (_name == "") _name = gAdjName;
     else gAdjName = _name;
-    
+
     if (_name == "" || gAvatar == NULL_KEY)
     {
         say("?");
@@ -156,12 +93,12 @@ save(string _name)
     if (_name == "home")
     {
         updateHome();
-        show("home");
+        tell("home");
         return;
     }
 
     updateCurrent();
-    
+
     integer i = llListFindList(gAdjNames,[_name]);
 
     string line = _name + ", " + (string) gAdjPos + ", " + (string) gAdjRot;
@@ -188,7 +125,7 @@ save(string _name)
 
 //------------------------------------------------------------------------------
 
-show(string _name)
+tell(string _name)
 {
     if (_name == "" || _name == "all")
     {
@@ -205,7 +142,7 @@ show(string _name)
 
             if ( (i+1) % 10 == 0)
             {
-                say((string) (i-10) + "-" + (string) (i+1) 
+                say((string) (i-10) + "-" + (string) (i+1)
                     + ":\n" + buffer + "\n");
                 start = i+2;
                 buffer = "";
@@ -256,24 +193,22 @@ updateHome()
     gHomePrimPos = gPrimPos;
     gHomePrimRot = gPrimRot;
 
-    integer i;
-    integer max = llGetListLength(gAdjNames);
-
-    // just clear all saved adjustments since recalculating all from new home
-    // would require calculations involving buggy sit target
     gAdjNames    = [];
     gAdjPoss     = [];
     gAdjRots     = [];
     gAdjPrimPoss = [];
     gAdjPrimRots = [];
+
+    // just clear all saved adjustments since recalculating all from new home
+    // would require calculations involving buggy sit target
+
+    add("");
 }
 
 //------------------------------------------------------------------------------
 
 moveTo(string _name, vector _pos, rotation _rot)
 {
-    say(_name + ":\n" +(string) _pos + "," + (string) _rot);
-
     integer max = 100;
     integer i = 0;
 
@@ -294,6 +229,12 @@ moveTo(string _name, vector _pos, rotation _rot)
 
 go(string _name)
 {
+    if (gHomePrimPos==ZERO_VECTOR)
+    {
+        llOwnerSay(HOME_TEXT);
+        return;
+    }
+
     updateCurrent();
 
     if (_name == "")
@@ -328,26 +269,99 @@ go(string _name)
 
 //------------------------------------------------------------------------------
 
-play(string _name)
+_play(string _name)
 {
-    if (_name == "") return;
     if (gPlaying != "") llStopAnimation(gPlaying);
+    go(_name);
     llStartAnimation(_name);
+    say(PLAY_TEXT + "'" + _name + "'");
     gPlaying = _name;
     gAdjName = _name;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-next()
+play(string _name)
 {
-    
+    if (_name == "") return;
+
+    integer i = llListFindList(gAdjNames,[_name]);
+    if (i>=0)
+    {
+        _play(_name);
+        return;
+    }
+
+    integer count = llGetListLength(gAdjNames);
+    llOwnerSay((string)count);
+
+    integer current = 0;
+    if (gAdjName != "")
+        current = llListFindList(gAdjNames,[gAdjName]);
+
+    if (_name == "next")
+    {
+        current++;
+        if (current==count) current = 0;
+        llOwnerSay((string)current);
+        _play(llList2String(gAdjNames,current));
+        return;
+    }
+
+    else if (_name == "prev")
+    {
+        current--;
+        if (current<0) current = count-1;
+        llOwnerSay((string)current);
+        _play(llList2String(gAdjNames,current));
+        return;
+    }
+
+    say(_name + "?");
+    return;
 }
 
 //------------------------------------------------------------------------------
 
-prev()
+_add(string _name)
 {
+    if (llListFindList(gAdjNames,[_name])<0)
+    {
+        gAdjNames    += _name;
+        gAdjPoss     += ZERO_VECTOR + <0.0,0.0,0.365>; // target err;
+        gAdjRots     += ZERO_ROTATION;
+        gAdjPrimPoss += ZERO_VECTOR;
+        gAdjPrimRots += ZERO_ROTATION;
+        say(ADDED_TEXT + "'" + _name + "'");
+    }
+}
+
+//------------------------------------------------------------------------------
+
+add(string _name)
+{
+    if (_name == "")
+    {
+        integer count = llGetInventoryNumber(INVENTORY_ANIMATION);
+        integer i;
+        for (i = 0; i<count; ++i)
+        {
+            string name = llGetInventoryName(INVENTORY_ANIMATION, i);
+            _add(name);
+        }
+    }
+    else
+    {
+        _add(_name);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+load()
+{
+    //TODO load an existing animations notecard, delete the sit target err,
+    //     and update adjustment storage array
 }
 
 //------------------------------------------------------------------------------
@@ -363,19 +377,21 @@ default
 {
     state_entry()
     {
-        llSitTarget(gLocalSitTargetPos, gLocalSitTargetRot);
-        llSetText(gStartingText,<1.0,0.0,0.0>,1.0);
+        llSitTarget(TARGET_POS, TARGET_ROT);
+        llSetText(START_TEXT,<1.0,0.0,0.0>,1.0);
         llListen(0,"",NULL_KEY,""); // just a temp tool, so ok
     }
 
     listen(integer _channel, string _name, key _id, string _text)
     {
-        if (llSubStringIndex(_text,"show")==0)
+        if (llSubStringIndex(_text,"tell")==0)
         {
             string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
-            if (name == "show") name = "";
-            show(name);
+            if (name == "tell") name = "";
+            tell(name);
         }
+
+        else if (_text == "t") tell("");
 
         else if (llSubStringIndex(_text, "save") == 0)
         {
@@ -384,20 +400,32 @@ default
             save(name);
         }
 
+        else if (_text == "s") save("");
+
         else if (llSubStringIndex(_text, "go") == 0)
         {
             string name = llStringTrim(llGetSubString(_text,2,-1),STRING_TRIM);
             if (name == "go") name = "";
             go(name);
         }
-        
+
         else if (llSubStringIndex(_text, "play") == 0)
         {
             string name = llStringTrim(llGetSubString(_text,4,-1),STRING_TRIM);
             if (name == "play") name = "";
             play(name);
         }
-        
+
+        else if (_text == "next" || _text == "n") play("next");
+        else if (_text == "prev" || _text == "p") play("prev");
+
+        else if (llSubStringIndex(_text,"add")==0)
+        {
+            string name = llStringTrim(llGetSubString(_text,3,-1),STRING_TRIM);
+            if (name == "add") name = "";
+            add(name);
+        }
+
         else if (_text == "stand")
         {
             if (gAvatar!=NULL_KEY) llUnSit(gAvatar);
@@ -418,13 +446,48 @@ default
                 llStopAnimation("sit");
                 llSetText("",ZERO_VECTOR,1.0);
                 if (gHomePos == ZERO_VECTOR) updateHome();
+                string first = llList2String(gAdjNames,0);
+                if (first != "") _play(first);
             }
             else
             {
-                llSetText(gStartingText,<1.0,0.0,0.0>,1.0);
+                llSetText(START_TEXT,<1.0,0.0,0.0>,1.0);
                 gAvatar = NULL_KEY;
             }
         }
     }
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2008, Mo Hax
+// All rights reserved.
+//
+// Simplified BSD License granted to all:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//     * Redistributions of source code must retain the above copyright notice,
+//         this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//         notice, this list of conditions and the following disclaimer in the
+//         documentation and/or other materials provided with the distribution.
+//     * Neither the name of Mo Hax nor the names of its contributors may be
+//         used to endorse or promote products derived from this software
+//         without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+////////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,5 @@
+Q. Why not use llGetObjectDetails() to fetch the actual avatar position in MultiPose rather than calculating from sit target and having to work around Second Life bug making actual avatar position different than assigned sit target?
+
+A. Can't use that method with anything moving. Doesn't always capture the position correctly depending on moment of sit and lag.
+
+------------------------------------------------------------------------------
