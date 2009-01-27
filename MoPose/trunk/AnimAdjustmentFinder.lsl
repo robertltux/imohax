@@ -311,7 +311,6 @@ play(string _name)
     }
 
     integer count = llGetListLength(gAdjNames);
-    llOwnerSay((string)count);
 
     integer current = 0;
     if (gAdjName != "")
@@ -321,7 +320,6 @@ play(string _name)
     {
         current++;
         if (current==count) current = 0;
-        llOwnerSay((string)current);
         _play(llList2String(gAdjNames,current));
         return;
     }
@@ -330,7 +328,6 @@ play(string _name)
     {
         current--;
         if (current<0) current = count-1;
-        llOwnerSay((string)current);
         _play(llList2String(gAdjNames,current));
         return;
     }
