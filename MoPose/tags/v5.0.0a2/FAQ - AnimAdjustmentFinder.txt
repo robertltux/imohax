@@ -1,0 +1,53 @@
+------------------------------------------------------------------------------
+
+Q. How do I adjust multiple animations for a poseball or items with poseballs linked?
+
+A. Here is the overall process. Commands are described in more detail later:
+
+	1. Create a poseball prim, position if necessary but do not link
+	2. Put all your animations into the poseball
+	3. Put the AnimAdjustmentFinder script into your poseball
+	4. Sit on the poseball, note the recognition of your animations:
+			MyPoseBall whispers: Added animation 'my animation' 
+		Also note you will start playing the first animation:
+			MyPoseBall whispers: Playing 'my animation'
+	5. Make adjustments by moving poseball with edit tools:
+		a. Right click the poseball prim you are sitting on, 'Edit'
+		b. Move and rotate the poseball until avatar appears as you like
+		c. Say 'save' (or 's') in public chat to save adjustment:
+				MyPoseBall whispers: my animation, <0.00000, 0.00000, 0.36500>, <0.00000, 0.00000, 0.00000, 1.00000>
+			This example is with no change in position or rotation.
+			Note the correction for buggy Second Life sit target in position.
+		d. Optionally display all your adjustments with 'tell' or 't'
+		e. Say 'play next', 'next', or 'n' in public chat to play next
+		f. You can return to prev with 'play prev', 'prev', or 'p'
+		g. You can play any specific anim by name with 'play my animation'
+		h. You can go to the position of any anim without changing animation
+			with the 'go my animation' command. This is useful when animations
+			have the same or similar adjustments.
+		i. You can return to home position with 'go home'
+		f. Repeat b-i until you have saved adjustments for all
+	6. Cut and paste adjustments into "animations" notecard
+		a. Say 'tell' or 't' in public chat
+		b. Create an 'animations' notecard in your inventory (if needed)
+		c. Cut and paste the listed adjustments into the 'animations' notecard
+		d. If more than 10 animations cleanup extra chat from notecard
+		e. Ensure no blank or poorly formatted lines are in notecard
+	7. Place "animations" notecard into poseball
+	8. Return poseball to home position with 'go home' command
+	9. Stand up.
+	10. Remove or deactivate AnimAdjustmentFinder script
+	11. Add MultiPose or compatible script to poseball
+	12. Link poseball (if not standalone poseball)
+	13. Sit on linked poseball to test, pgup/pgdown to cycle through
+	------------------------------------------------------------------------------
+
+Q. How do I adjust multiple animations for items without a poseball?
+
+A. Same process as with poseball but when complete transfer the contents of the poseball to the sit prim in your item. Adjust your sit target accordingly, all adjustments will be relative to avatar appearance from that sit target.
+
+------------------------------------------------------------------------------
+
+Q. Why does AnimAdjustmentFinder time out with "AnimAdjustmentFinder has timed out. Turning script off."?
+
+A. This is a safety precaution, which can be reversed simply by checking the Running check box in the script editor, is to prevent content creators from accidentally leaving a running AnimAdjustmentFinder script in their creation. Releasing a product, for example, without this safety would cause horrible problems for those using it since the command listener on public chat (channel 0) would not only create unnecessary lag, but potentially get in the way of normal public chat.

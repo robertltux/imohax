@@ -1,0 +1,35 @@
+Mission:
+  Create the easiest and best pose/animation tool set that exists by
+  factoring popular MoPose functionality and integrating new features
+  into scripts and objects targeted at specific users and use cases while
+  maximizing OpenSim compatibility and efficiency
+
+Milestones:
+* Alpha release MoPose 5.0 by Jan 15th
+
+Design Objectives:
+* Safegaurd state against reset, persist state, opensim compat
+* No unnecessary features per script, minimize logical paths through scripts
+* Minimize functions, maximize states, scripts share and override states
+* Maximize sustainability, eliminate obfuscation
+* Comply strictly with http://wiki.secondlife.com/wiki/LSL_Style_Guide
+* Comply with BSD licensing for all open source components
+* Create help resources to reduce learning curve (video tuts, blogs, pages)
+* Animations defined as name, source, adjustment, duration, emote and sound
+
+Functional Requirements:
+* One pose, no poseball
+* One Pose, poseball
+* One Pose (all) syncronized
+* Multiple poses, pgup/pgdown
+* Multiple poses, menu
+* Multiple poses, remote hud
+* Multiple poses (all) syncronized
+* Emotes independent, but triggered, from pose script
+* Wizards for all notecard configurations needed (cutnpaste, email)
+[More, see Feature Breakdown table.]
+
+Questions:
+* Do we add dynamic user adjustment options?
+* Do we add dynamic owner adjustment options?
+	separate dormant script perhaps; if found, activate
